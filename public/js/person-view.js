@@ -30,7 +30,7 @@ export function createPersonView() {
 
     const intro = h(
       'section',
-      { class: 'card area-ring' },
+      { class: 'card p-intro' },
       h('h2', {}, `Hello ${person.name}. This is your page.`),
       h(
         'p',
@@ -61,21 +61,21 @@ export function createPersonView() {
       h('span', { class: 'knob' }, icon(sharing.on ? 'check' : 'pause')),
       h('span', {}, sharing.on ? `Sharing with ${caregiver.name}: On` : `Sharing with ${caregiver.name}: Paused`),
     );
-    intro.append(
-      h('div', { class: 'switch-row' }, toggle),
-      sharing.on
-        ? null
-        : h('p', { class: 'hint' }, `Paused. ${sharing.dropped} thing${sharing.dropped === 1 ? '' : 's'} that happened since then ${sharing.dropped === 1 ? 'was' : 'were'} not kept.`),
-    );
+    intro.append(h('div', { class: 'switch-row' }, toggle));
+    if (!sharing.on) {
+      intro.append(
+        h('p', { class: 'hint' }, `Paused. ${sharing.dropped} thing${sharing.dropped === 1 ? '' : 's'} that happened since then ${sharing.dropped === 1 ? 'was' : 'were'} not kept.`),
+      );
+    }
     root.append(intro);
 
     const seen = renderStatusCard(status, { personName: person.name, who: 'person' });
-    seen.classList.add('area-status');
+    seen.classList.add('p-status');
     root.append(seen);
 
     const lists = h(
       'section',
-      { class: 'card area-nudge', 'aria-labelledby': 'priv-title' },
+      { class: 'card p-privacy', 'aria-labelledby': 'priv-title' },
       h('h2', { id: 'priv-title' }, 'What Hearthbeat uses, and never uses'),
       h(
         'div',
@@ -93,7 +93,7 @@ export function createPersonView() {
 
     const log = h(
       'section',
-      { class: 'card area-timeline', 'aria-labelledby': 'log-title' },
+      { class: 'card p-log', 'aria-labelledby': 'log-title' },
       h('h2', { id: 'log-title' }, 'Who looked, and what they did'),
       state.accessLog.length
         ? h(
@@ -114,7 +114,7 @@ export function createPersonView() {
 
     const controls = h(
       'section',
-      { class: 'card area-more', 'aria-labelledby': 'ctl-title' },
+      { class: 'card p-controls', 'aria-labelledby': 'ctl-title' },
       h('h2', { id: 'ctl-title' }, 'Your controls'),
       h(
         'div',
@@ -153,7 +153,7 @@ export function createPersonView() {
       root.append(
         h(
           'section',
-          { class: 'card area-more', 'aria-labelledby': 'mytl-title' },
+          { class: 'card p-timeline', 'aria-labelledby': 'mytl-title' },
           h('h2', { id: 'mytl-title' }, 'Today, in plain words'),
           renderTimeline(state.timeline),
         ),

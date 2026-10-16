@@ -181,8 +181,22 @@ details.why[open] summary { margin-bottom: 0.5rem; }
 }
 
 /* ---------- person view extras ---------- */
-.area-more { grid-column: 1 / -1; }
-@media (max-width: 960px) { .area-more { grid-column: 1; order: 5; } }
+/* Person view grid: their controls on the left, what the family sees on the right. */
+.p-intro { grid-column: 1; grid-row: 1; }
+.p-privacy { grid-column: 1; grid-row: 2; }
+.p-controls { grid-column: 1; grid-row: 3; }
+.p-status { grid-column: 2; grid-row: 1; }
+.p-log { grid-column: 2; grid-row: 2; }
+.p-timeline { grid-column: 2; grid-row: 3; }
+@media (max-width: 960px) {
+  .p-intro, .p-privacy, .p-controls, .p-status, .p-log, .p-timeline { grid-column: 1; grid-row: auto; }
+  .p-intro { order: 1; }
+  .p-status { order: 2; }
+  .p-log { order: 3; }
+  .p-controls { order: 4; }
+  .p-privacy { order: 5; }
+  .p-timeline { order: 6; }
+}
 .control-list { display: grid; gap: 1rem; justify-items: start; }
 .check-row { display: flex; gap: 0.75rem; align-items: flex-start; cursor: pointer; }
 .check-row input { width: 1.4rem; height: 1.4rem; margin-top: 0.2rem; accent-color: var(--amber); }
