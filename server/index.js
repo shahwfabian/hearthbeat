@@ -50,7 +50,12 @@ async function startDemo(cfg) {
 /** Live mode: a real Ring Playground token, real devices, Event History polling. */
 async function startLive(cfg) {
   const { live } = cfg;
-  const ring = new RingClient({ token: live.token, ...(live.baseUrl ? { baseUrl: live.baseUrl } : {}) });
+  let hubRef = null;
+  const ring = new RingClient({
+    token: live.token,
+    ...(live.baseUrl ? { baseUrl: live.baseUrl } : {}),
+    onRequest: (info) => hubRef?.logApi({ dir: 'out', ...info, note: info.attempt ? `retry ${info.attempt}` : '' }),
+  });
 
   if (live.inside.length === 0) {
     const devices = await ring.listDevices();
@@ -71,7 +76,9 @@ async function startLive(cfg) {
     personName: process.env.PERSON_NAME || 'Your loved one',
     caregiverName: process.env.CAREGIVER_NAME || 'You',
     roles: rolesFromLive(live),
+    ringTarget: { label: 'Ring Partner API', host: live.baseUrl || 'https://api.amazonvision.com', simulated: false },
   });
+  hubRef = hub;
 
   const server = createApp({ hmacKey: live.hmacKey, publicDir });
   const port = await listen(server, cfg);

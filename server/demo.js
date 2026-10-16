@@ -46,7 +46,11 @@ export class DemoRuntime {
     await once(this.api, 'listening');
     this.apiUrl = `http://127.0.0.1:${this.api.address().port}`;
 
-    this.ring = new RingClient({ token: DEMO_TOKEN, baseUrl: this.apiUrl });
+    this.ring = new RingClient({
+      token: DEMO_TOKEN,
+      baseUrl: this.apiUrl,
+      onRequest: (info) => this.hub?.logApi({ dir: 'out', ...info, note: info.attempt ? `retry ${info.attempt}` : '' }),
+    });
     this.hub = new Hub({
       ring: this.ring,
       now: () => this.world.simNow,
@@ -55,6 +59,11 @@ export class DemoRuntime {
       personName: PERSON.name,
       caregiverName: PERSON.caregiver,
       roles: Object.fromEntries(DEVICES.map((d) => [d.id, d.role])),
+      ringTarget: {
+        label: 'Simulated Ring API: our local mock of the documented endpoints, not Ring',
+        host: this.apiUrl,
+        simulated: true,
+      },
     });
     this.emitter = createEmitter({ url: this.webhookUrl() });
     await this.hub.loadHistory();

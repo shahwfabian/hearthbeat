@@ -74,6 +74,8 @@ export function createApp({ hmacKey, publicDir }) {
   const receive = createWebhookReceiver({
     key: hmacKey,
     hub: { ingest: (ev) => (ctx.hub ? ctx.hub.ingest(ev) : false) },
+    onDelivery: ({ status, note, eventType }) =>
+      ctx.hub?.logApi({ dir: 'in', method: 'POST', path: '/webhooks/ring', status, note, detail: eventType ?? '' }),
   });
   const sseClients = new Set();
 

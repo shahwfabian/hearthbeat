@@ -8,6 +8,7 @@ import { dayKey, formatClock, minutesOfDay, startOfDay } from './core/time.js';
 const DAY_MS = 86_400_000;
 const MAX_EVENTS = 5000;
 const MAX_LOG = 200;
+const MAX_API_LOG = 60;
 const VIEW_LOG_DEBOUNCE_MS = 5 * 60_000;
 const NUDGE_COOLDOWN_MS = 10 * 60_000;
 
@@ -42,9 +43,10 @@ export class Hub {
    *   personName: string,
    *   caregiverName: string,
    *   roles?: Record<string, 'inside'|'doorway'|'chime'>,
+   *   ringTarget?: { label: string, host: string, simulated: boolean },
    * }} opts
    */
-  constructor({ ring, now, wallNow = Date.now, tz, mode, personName, caregiverName, roles = {} }) {
+  constructor({ ring, now, wallNow = Date.now, tz, mode, personName, caregiverName, roles = {}, ringTarget = null }) {
     this.ring = ring;
     this.now = now;
     this.wallNow = wallNow;
@@ -53,6 +55,10 @@ export class Hub {
     this.personName = personName;
     this.caregiverName = caregiverName;
     this.roles = { ...roles };
+    this.ringTarget = ringTarget;
+    /** Every Ring call and webhook, newest last. Metadata only: no tokens, no bodies. */
+    this.apiLog = [];
+    this.apiSeq = 0;
 
     /** @type {Map<string, {id:string,name:string,role:string,online:boolean|null,offlineSince:number|null}>} */
     this.devices = new Map();
@@ -207,6 +213,31 @@ export class Hub {
     return entry;
   }
 
+  /**
+   * Record one Ring API call (direction "out") or one webhook delivery ("in").
+   * This feeds the "Under the hood" panel, so anyone watching a demo can see
+   * which Ring endpoints are really being used.
+   */
+  logApi({ dir, method, path, status, ms = null, note = '', detail = '' }) {
+    this.apiSeq += 1;
+    const wall = this.wallNow();
+    const entry = {
+      id: this.apiSeq,
+      dir,
+      method,
+      path,
+      status,
+      ms,
+      note,
+      detail,
+      time: new Date(wall).toLocaleTimeString('en-US', { timeZone: this.tz, hour: 'numeric', minute: '2-digit', second: '2-digit' }),
+    };
+    this.apiLog.push(entry);
+    if (this.apiLog.length > MAX_API_LOG) this.apiLog.splice(0, this.apiLog.length - MAX_API_LOG);
+    this.emit('api');
+    return entry;
+  }
+
   /** The family member opened the dashboard. Logged at most once every five minutes of real time. */
   recordFamilyView() {
     const last = this.lastViewLogged.get(this.caregiverName) ?? 0;
@@ -249,6 +280,7 @@ export class Hub {
     this.accessSeq = 0;
     this.lastNudgeAt = 0;
     this.lastViewLogged.clear();
+    this.apiLog = [];
     this.lastPoll = undefined;
     this.baselineCache = null;
     this.emit('update', { reason: 'reset' });

@@ -47,7 +47,7 @@ export async function post(path, body = {}) {
  */
 export function connectEvents(onMessage, onStatus) {
   const source = new EventSource('/api/events');
-  for (const type of ['update', 'visitor', 'nudge', 'chime', 'log', 'clock']) {
+  for (const type of ['update', 'visitor', 'nudge', 'chime', 'log', 'clock', 'api']) {
     source.addEventListener(type, (e) => {
       try {
         onMessage(JSON.parse(e.data));

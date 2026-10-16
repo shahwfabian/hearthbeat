@@ -64,6 +64,7 @@ export function buildSnapshot(hub, demo, viewer) {
     accessLog: [...hub.accessLog].reverse().slice(0, 50),
     privacy: PRIVACY,
     demo: demo ? demo.describe() : null,
+    api: { target: hub.ringTarget, log: [...hub.apiLog].reverse().slice(0, 25) },
     canNudge: hub.sharing && Object.values(hub.roles).includes('chime'),
   };
 }

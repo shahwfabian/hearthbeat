@@ -190,6 +190,24 @@ test('server-sent events deliver updates as they happen', async () => {
   assert.match(seen, /event: update/);
 });
 
+test('the "Under the hood" log shows real Ring calls and webhook verification, without secrets', async () => {
+  await post('/api/demo/scenario', { id: 'usual' });
+  await post('/api/demo/trigger', { id: 'doorbell' });
+  const s = await state('person');
+  assert.equal(s.api.target.simulated, true);
+  assert.match(s.api.target.label, /not Ring/);
+  const out = s.api.log.filter((e) => e.dir === 'out');
+  assert.ok(out.some((e) => e.method === 'GET' && e.path.startsWith('/v1/devices?include=') && e.status === 200));
+  assert.ok(out.some((e) => e.path.startsWith('/v1/history/devices/') && e.path.includes('/events')));
+  const hook = s.api.log.find((e) => e.dir === 'in');
+  assert.equal(hook.path, '/webhooks/ring');
+  assert.equal(hook.status, 200);
+  assert.match(hook.note, /signature verified/);
+  assert.equal(hook.detail, 'button_press');
+  assert.ok(!JSON.stringify(s.api).includes('demo-token'), 'the token never appears');
+  assert.ok(!JSON.stringify(s.api).includes('signing-key'), 'the signing key never appears');
+});
+
 test('forget erases remembered activity and the family sees "learning" again', async () => {
   assert.equal((await post('/api/forget')).status, 200);
   const s = await state('person');
