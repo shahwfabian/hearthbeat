@@ -10,6 +10,8 @@ It uses only **when** a Ring camera or doorbell noticed movement. Never video, a
 |---|---|
 | ![Family view](docs/screenshots/family-eased.png) | ![Person view](docs/screenshots/person.png) |
 
+![Under the hood: live Ring API calls and webhook verification](docs/screenshots/under-the-hood.png)
+
 ## The problem
 
 Looking after an older relative from a distance comes with a daily worry. Cameras answer a different
@@ -29,6 +31,8 @@ parents want dignity.
 * **Their side of the story:** the person being cared for has their own page. They see everything the
   family sees, an **access log** of every look and chime, a **pause switch** that really stops collection
   (the chime is refused while paused), and **delete everything**.
+* **Under the hood:** a live panel of every Ring call and webhook the page depends on (paths, status,
+  signature verification; never tokens or bodies), labelled "simulated" in demo mode.
 * **Interactive demo:** a built-in director panel to play a simulated day, jump to key moments, and make
   things happen: a doorbell press, a package, cameras going offline.
 
@@ -113,7 +117,7 @@ server/core/    baseline, rules, status (pure functions)
 server/sim/     demo only: household, scenarios, mock Ring API, signed webhook emitter
 server/hub.js   state, consent, access log, nudge
 public/         the interface (plain ES modules, SVG, strict CSP)
-docs/           architecture, privacy, live mode, demo script, submission pack, thumbnail
+docs/           architecture, privacy, live mode, demo script, video plan, submission pack, thumbnail
 scripts/        project checks and the thumbnail generator
 ```
 

@@ -10,7 +10,7 @@ Sections marked **CONFIRM** contain statements only the submitter can truthfully
 | Requirement (from the official rules) | Status |
 |---|---|
 | Primary track: **Ring** | Ready |
-| Working app using Ring APIs, shown through a simulator or an actual Ring device | Code ready. **Video must show it; see the note in [DEMO_SCRIPT.md](DEMO_SCRIPT.md#which-ring-source-to-show)** |
+| Working app using Ring APIs, shown through a simulator or an actual Ring device | Code ready. **Risk: our simulator is self-built, not an official Ring one. Read [VIDEO_PLAN.md](VIDEO_PLAN.md) and send the [clarification email](CLARIFICATION_EMAIL.md)** |
 | Text description | Below |
 | Public GitHub repo with an open source license detectable in the About section | MIT `LICENSE` is in the repo. After the repo is public, confirm GitHub shows "MIT license" in About |
 | Clear setup and run instructions in the repo | [README](../README.md) |
@@ -54,6 +54,8 @@ event metadata, with the other person's dignity as the starting point.
   anyone who cannot hear the chime.
 * **Their side of the story:** the person has their own page showing exactly what the family sees, an
   access log of every look and every chime, a pause switch that really stops collection, and delete-all.
+* **Under the hood:** a live list of every Ring API call and webhook the page relies on, so a viewer can
+  verify which endpoints are used. Demo mode labels the API as our simulation.
 * **Interactive demo:** a built-in director panel lets anyone play a simulated day, jump to key moments,
   and make things happen (a doorbell press, a package, cameras going offline) to watch the story change.
 
