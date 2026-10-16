@@ -1,0 +1,33 @@
+/* Presenter dock: the demo controls. Only shown in demo mode. */
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line-strong); box-shadow: 0 -8px 24px rgb(60 40 10 / 0.08);
+}
+.dock[hidden] { display: none; }
+.dock-inner { max-width: 1180px; margin: 0 auto; padding: 0.6rem 1rem; display: grid; gap: 0.6rem; }
+.dock-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
+.dock-title { font-weight: 750; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dock-clock { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 6.2rem; }
+.dock-sim { font-size: 0.75rem; font-weight: 700; color: var(--info-ink); background: var(--info-soft); padding: 0.2rem 0.55rem; border-radius: 999px; }
+.dock-toggle { margin-left: auto; }
+.dock[data-collapsed="true"] .dock-body { display: none; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px; cursor: pointer;
+  padding: 0.35rem 0.8rem; min-height: 2.25rem; font-size: 0.9rem; font-weight: 600;
+}
+.chip:hover { background: var(--surface-2); }
+.chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip-action { background: var(--amber-soft); color: var(--amber-ink); border-color: transparent; }
+.chip-action:hover { background: color-mix(in srgb, var(--amber-soft) 80%, var(--amber)); }
+
+.scenario-blurb { color: var(--muted); font-size: 0.9rem; flex-basis: 100%; }
+.play-btn { min-width: 6.5rem; }
+
+@media (max-width: 640px) {
+  body { padding-bottom: 8rem; }
+  .dock-clock { font-size: 1.25rem; }
+}
