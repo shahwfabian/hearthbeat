@@ -1,44 +1,41 @@
-# Demo video script (target 2:35, limit 3:00)
+# Demo video script (demo mode, target 2:45, hard limit 3:00)
 
 Rules from the hackathon: under 3 minutes, public on YouTube or Vimeo, shows the project working through
-a Ring simulator or an actual Ring device, no third-party trademarks or copyrighted music. Record with
-no music at all (or music you own), do not show Ring logos, and keep the screen at 1080p.
+a Ring simulator or an actual Ring device, no third-party trademarks or copyrighted music. Record with no
+music at all, show no Ring logos, and use 1080p.
+
+This script is for **demo mode**, and it discloses that plainly. Read [VIDEO_PLAN.md](VIDEO_PLAN.md) first:
+it explains the risk, what to send to Devpost, and how to add a real-device clip if you can.
 
 **Before recording**
-* `npm start`, open http://127.0.0.1:3000, press **Got it** on the intro, leave the dock open.
-* Browser zoom 100%, dark or light theme, notifications off.
-* If you have a Ring account and device, record the live segment in step 6 from `npm run live`.
-  See "Which Ring source to show" below.
+* `npm start`, open http://127.0.0.1:3000/?intro=0, leave the demo director panel open.
+* Open `server/ring/client.js` and `server/ring/receiver.js` in an editor tab, and a terminal in the repo.
+* Browser zoom 100%, notifications off, dark or light theme (either works).
 
 | Time | On screen | Say |
 |---|---|---|
-| 0:00 | Thumbnail for 3 seconds, then the family view | "Anyone who looks after an ageing parent asks one question every day: does today look normal? Cameras answer a different question, and they feel like spying." |
-| 0:15 | Point at the headline and the ring | "Hearthbeat answers it using only when a Ring device noticed movement. No video, no audio, no snapshots. The outer band is Margaret's usual day, learned from two weeks of Ring Event History. The inner band is today." |
-| 0:35 | Hover the ring, then press the keyboard arrows | "Point at any half hour and it tells you in plain words what is usual. It works with the keyboard too." |
-| 0:45 | Dock: pick **A slow morning**, press **Skip to 10:30 AM** | "Now a slow morning. Margaret hasn't moved yet. An hour past her usual time it says quieter than usual. Two hours past, it says worth a call." |
-| 1:05 | Open **Why am I seeing this?** | "It always shows its working: her usual first movement, the tolerance, how late it is. No black box, no medical claims." |
-| 1:15 | Click **Send a gentle chime**, confirm, show the toast | "Instead of an alarm, Dana taps once. This plays a soft sound on Margaret's Ring Chime through the chime audio playback endpoint. Nothing is recorded." |
-| 1:30 | Dock: **Dana visits** then **Skip to** the visit (use Play at Zoom speed until 9:55 AM) | "Here Dana turns up. The doorbell press arrives as a signed Ring webhook, verified over the raw body." The visual doorbell banner appears. |
-| 1:45 | Banner, then the eased note on the status card | "For anyone who can't hear the chime it becomes a big visual alert. And Hearthbeat eases its message, because a visit explains a quiet spell." |
-| 1:55 | Switch to **Margaret's view** | "Here is the part I care most about. Margaret has her own page. Everything Dana can see, she can see." |
-| 2:05 | Point at the access log (shows the chime and the views) | "Every look and every chime is in an access log." |
-| 2:12 | Click the sharing switch, confirm. Switch to **Dana's view** | "And Margaret holds the off switch. One tap and Dana sees only that sharing is paused, and the chime button is disabled." |
-| 2:25 | Back to the thumbnail or the README | "Hearthbeat: a calm answer for families, built on Ring events, where the person being cared for stays in charge. Code and setup are in the repo." |
+| 0:00 | Thumbnail 3 s, then the family view | "Anyone who looks after an ageing parent asks one question every day: does today look normal? Cameras answer a different question, and they feel like spying." |
+| 0:12 | Still on the family view; point at the **Simulated demo** badge | "Disclosure first. I don't own a Ring device, and Ring doesn't document an official simulator, so this runs against a simulator I wrote from Ring's published API documentation." |
+| 0:25 | Headline, then the ring | "Hearthbeat answers the question using only when a Ring device noticed movement. No video, audio or snapshots. The outer band is Margaret's usual day, learned from two weeks of Event History. The inner band is today." |
+| 0:42 | Hover the ring, press the arrow keys | "Point at any half hour and it says what is usual. It works with the keyboard too." |
+| 0:50 | Dock: **A slow morning**, **Key moment** | "A slow morning. An hour past her usual time it says quieter than usual. Two hours past, worth a call." |
+| 1:05 | Open **Why am I seeing this?** | "It always shows its working. No black box, no medical claims." |
+| 1:13 | **Send a gentle chime**, confirm, toast | "Instead of an alarm, Dana taps once. This plays a soft sound on Margaret's Ring Chime through the chime audio playback endpoint. Nothing is recorded." |
+| 1:28 | Dock: **Dana visits**, **Key moment**, then **Play day**. Banner appears | "Dana arrives. The doorbell press comes in as a signed webhook, and for anyone who can't hear the chime it becomes a big visual alert. Hearthbeat notices a visit explains a quiet spell and eases its message." |
+| 1:48 | Scroll to **Under the hood** | "Here are the calls behind that, as they happen. Each is a real HTTP request to Ring's documented paths: devices, Event History with paging, chime playback. This one is the webhook with its signature verified." |
+| 2:00 | Switch to **Margaret's view**, point at the access log | "Margaret has her own page. Everything Dana can see, she can see, and every look and every chime is in this log." |
+| 2:12 | Click the sharing switch and confirm. Switch to **Dana's view** | "And Margaret holds the off switch. One tap, and Dana sees only that sharing is paused, and the chime is disabled." |
+| 2:24 | Editor: `client.js` showing `DEFAULT_BASE_URL`; terminal: `npm run check` green | "The same client points at Ring's real API with a token; that path is written from the docs and tested against my simulator. I haven't been able to run it on a real device. 180-plus tests pass." |
+| 2:40 | Thumbnail or README | "Hearthbeat: a calm answer for families, built on Ring events, where the person being cared for stays in charge." |
 
-## Which Ring source to show
+## If you have a real device
 
-The rules say the video must show the project working through **a simulator or an actual Ring device you
-have for testing**.
-
-* **Best:** record step 0:45 to 1:30 in live mode with your own Ring device (see [LIVE_MODE.md](LIVE_MODE.md))
-  so judges see a real device in the loop. Say plainly which parts are live.
-* **Fallback:** demo mode uses *our own* mock of the documented Ring API and says "Simulated demo" on
-  screen. We could not find an official Ring simulator in Ring's documentation, so say that clearly rather
-  than implying the mock is Ring's. Judges may treat this differently, which is a risk to weigh.
+Replace 0:12 with a short live clip: run `npm run live`, show the **LIVE** label in Under the hood and real
+paths returning 200, and say which parts are live. Keep the disclosure for anything still simulated.
 
 ## Recording tips
 
-* Use the **Normal** speed for the first scenario so viewers can follow the clock; use **Zoom** to cross
-  gaps quickly.
-* If a take goes wrong, `A usual day` in the dock resets the whole day and the access log.
-* Keep the cursor still while talking. Zoom the browser to 110% if text looks small on a phone.
+* Use **Normal** speed so viewers can follow the clock; **Zoom** crosses long gaps.
+* If a take goes wrong, **A usual day** in the dock resets the day, the access log and the call log.
+* Keep the cursor still while talking. If text looks small, zoom the browser to 110%.
+* Time it with a stopwatch. If you run long, cut the keyboard-arrows beat at 0:42 first.
