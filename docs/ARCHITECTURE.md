@@ -72,7 +72,8 @@ Floors on the tolerances mean a very regular routine can never produce a hair-tr
 ## Consent by construction
 
 * `Hub.setSharing(false)` makes `ingest` drop everything; the family view shows only "paused".
-* `Hub.nudge` refuses while sharing is paused, has a 10 minute cooldown, and checks online and snooze.
+* `Hub.nudge` refuses while sharing is paused and has a 10 minute cooldown; `RingClient.playChime` also
+  checks that the device is a chime, is online, and is not snoozed.
 * Every family action goes into the access log, which the person can read at any time.
 * `Hub.forget` erases all remembered events.
 * The `HomeEvent` type has no field that could hold media. There is no code path that stores any.
