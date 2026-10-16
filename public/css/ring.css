@@ -1,0 +1,37 @@
+/* The Rhythm Ring: a 24 hour clock. Outer band = usual day, inner band = today. */
+.ring-card { display: grid; gap: 0.75rem; justify-items: center; }
+.ring-wrap { width: min(100%, 30rem); position: relative; }
+.ring-svg { width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+.ring-svg:focus-visible { box-shadow: var(--focus); border-radius: 50%; }
+
+.ring-track { fill: none; stroke: var(--line); stroke-width: 1; }
+.ring-face { fill: var(--surface-2); }
+.ring-seg-usual { fill: var(--amber); transition: opacity 0.4s ease; }
+.ring-seg-today { fill: var(--ok); transition: opacity 0.4s ease; }
+.ring-svg[data-level="quiet"] .ring-seg-today { fill: var(--quiet); }
+.ring-svg[data-level="checkin"] .ring-seg-today { fill: var(--call); }
+.ring-seg-future { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+.ring-seg-empty { fill: var(--line); opacity: 0.55; }
+.ring-cursor { fill: none; stroke: var(--ink); stroke-width: 2; }
+
+.ring-label { fill: var(--muted); font-size: 12px; font-weight: 650; text-anchor: middle; dominant-baseline: middle; }
+.ring-tick { stroke: var(--line-strong); stroke-width: 1.5; }
+.ring-now-hand { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.ring-now-dot { fill: var(--ink); }
+.ring-center-time { fill: var(--ink); font-family: var(--font-display); font-size: 30px; font-weight: 700; text-anchor: middle; }
+.ring-center-sub { fill: var(--muted); font-size: 12px; text-anchor: middle; }
+.ring-door { fill: var(--amber-ink); }
+
+.ring-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; justify-content: center; color: var(--muted); font-size: 0.9rem; }
+.ring-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.swatch { width: 0.9rem; height: 0.9rem; border-radius: 4px; display: inline-block; }
+.swatch-usual { background: var(--amber); opacity: 0.7; }
+.swatch-today { background: var(--ok); }
+.swatch-door { background: var(--amber-ink); border-radius: 50%; }
+
+.ring-readout {
+  min-height: 3.2rem; text-align: center; color: var(--ink); font-size: 1rem;
+  background: var(--surface-2); border-radius: var(--radius-sm); padding: 0.6rem 1rem; width: 100%;
+}
+.ring-readout strong { font-variant-numeric: tabular-nums; }
+.ring-readout small { display: block; color: var(--muted); }
