@@ -84,7 +84,8 @@ export class DemoRuntime {
     if (!this.running || this.busy) return;
     this.busy = true;
     try {
-      const events = this.world.advance(dt * (this.rate * 60) / 1000);
+      // rate is simulated minutes per real second: dt ms * rate * 60_000 ms / 1000 ms
+      const events = this.world.advance(dt * this.rate * 60);
       await this.#deliver(events);
       this.hub.emit('clock');
     } finally {

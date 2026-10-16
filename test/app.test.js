@@ -94,6 +94,20 @@ test('a slow morning escalates from learning to "worth a call"', async () => {
   assert.match(s.status.detail, /usually around/);
 });
 
+test('playing the day moves the simulated clock at the chosen speed', async () => {
+  await post('/api/demo/scenario', { id: 'usual' });
+  await post('/api/demo/rate', { rate: 60 }); // 60 simulated minutes per real second
+  const start = (await state()).demo.minute;
+  await post('/api/demo/play', { running: true });
+  await new Promise((r) => setTimeout(r, 900));
+  await post('/api/demo/play', { running: false });
+  const after = await state();
+  assert.equal(after.demo.running, false);
+  const moved = after.demo.minute - start;
+  assert.ok(moved >= 30 && moved <= 120, `clock moved ${moved} simulated minutes in about 0.9 s`);
+  await post('/api/demo/rate', { rate: 6 });
+});
+
 test('triggering a doorbell press shows up in visitors and the timeline', async () => {
   await post('/api/demo/trigger', { id: 'doorbell' });
   const s = await state();
