@@ -65,7 +65,7 @@ export function historyRowToEvent(row, fallbackDeviceId) {
 
 export class RingClient {
   /**
-   * @param {{ token: string, baseUrl?: string, timeoutMs?: number, maxRetries?: number, sleep?: (ms:number)=>Promise<void>, fetchImpl?: typeof fetch }} opts
+   * @param {{ token: string, baseUrl?: string, timeoutMs?: number, maxRetries?: number, sleep?: (ms:number)=>Promise<void>, fetchImpl?: typeof fetch, onRequest?: (info: {method:string, path:string, status:number, ms:number, attempt:number}) => void }} opts
    */
   constructor({
     token,
@@ -74,6 +74,7 @@ export class RingClient {
     maxRetries = 3,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
     fetchImpl = fetch,
+    onRequest = null,
   }) {
     if (!token) throw new RingError('A Ring access token is required');
     this.token = token;
@@ -82,6 +83,8 @@ export class RingClient {
     this.maxRetries = maxRetries;
     this.sleep = sleep;
     this.fetch = fetchImpl;
+    /** Optional observer for every attempt: powers the "Under the hood" panel. Never receives the token or bodies. */
+    this.onRequest = onRequest;
   }
 
   /**
@@ -92,9 +95,13 @@ export class RingClient {
   async request(method, path, opts = {}) {
     let attempt = 0;
     for (;;) {
+      const started = Date.now();
       try {
-        return await this.#once(method, path, opts);
+        const out = await this.#once(method, path, opts);
+        this.#observe(method, path, opts, 200, started, attempt);
+        return out;
       } catch (err) {
+        this.#observe(method, path, opts, err instanceof RingError ? err.status : 0, started, attempt);
         const retryable =
           err instanceof RingError && !(err instanceof RingAuthError) && RETRYABLE.has(err.status);
         if (!retryable || attempt >= this.maxRetries) throw err;
@@ -102,6 +109,17 @@ export class RingClient {
         attempt += 1;
         await this.sleep(waitMs);
       }
+    }
+  }
+
+  #observe(method, path, { query } = {}, status, started, attempt) {
+    if (!this.onRequest) return;
+    const url = new URL(path.startsWith('http') ? path : this.baseUrl + path);
+    for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+    try {
+      this.onRequest({ method, path: url.pathname + decodeURIComponent(url.search), status, ms: Date.now() - started, attempt });
+    } catch {
+      /* an observer must never break a Ring call */
     }
   }
 

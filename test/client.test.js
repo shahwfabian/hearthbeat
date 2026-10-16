@@ -222,3 +222,25 @@ test('playChime refuses devices that are not chimes, offline, snoozed, or slotle
     assert.equal(calls.length, 1, `no playback request when ${reason}`);
   }
 });
+
+test('onRequest observes every attempt with method, path, status and no secrets', async () => {
+  const seen = [];
+  const { impl } = stubFetch([{ status: 503 }, { body: { data: [] } }]);
+  const c = new RingClient({
+    token: 'super-secret-token',
+    baseUrl: 'https://ring.test',
+    fetchImpl: impl,
+    sleep: async () => {},
+    onRequest: (info) => seen.push(info),
+  });
+  await c.listDevices();
+  assert.deepEqual(seen.map((s) => [s.method, s.status, s.attempt]), [['GET', 503, 0], ['GET', 200, 1]]);
+  assert.equal(seen[0].path, '/v1/devices?include=status,capabilities');
+  assert.ok(!JSON.stringify(seen).includes('super-secret-token'));
+});
+
+test('a throwing observer never breaks a Ring call', async () => {
+  const { impl } = stubFetch([{ body: { data: [] } }]);
+  const c = new RingClient({ token: 't', baseUrl: 'https://ring.test', fetchImpl: impl, onRequest: () => { throw new Error('boom'); } });
+  assert.deepEqual(await c.listDevices(), []);
+});
