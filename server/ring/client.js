@@ -22,6 +22,15 @@ export class RingError extends Error {
   }
 }
 
+/** The chime exists but cannot sound right now. `reason` is machine readable. */
+export class ChimeUnavailableError extends RingError {
+  constructor(reason, message) {
+    super(message);
+    this.name = 'ChimeUnavailableError';
+    this.reason = reason;
+  }
+}
+
 /** 401: the token is missing, invalid or expired (Playground tokens last about 30 minutes). */
 export class RingAuthError extends RingError {
   constructor(message, opts) {
@@ -150,6 +159,54 @@ export class RingClient {
       query = undefined;
     }
     return events;
+  }
+
+  /**
+   * Play a gentle sound on a Ring Chime (needs the Chime Controls capability).
+   *
+   * Follows the documented sequence: read capabilities, status and
+   * configurations in one request, make sure the device is really a chime that
+   * is online and not snoozed, pick an enabled audio slot, then
+   * POST /v1/devices/{id}/media/audio/playback with that slot's audio_ref.
+   * Playback is the only chime command partners get and it changes no state.
+   *
+   * @returns {Promise<{ audioRef: string, audioName: string|null, status: string }>}
+   * @throws {ChimeUnavailableError} when the chime cannot sound right now
+   */
+  async playChime(deviceId) {
+    const doc = await this.request('GET', `/v1/devices/${encodeURIComponent(deviceId)}`, {
+      query: { include: 'capabilities,configurations,status' },
+    });
+    const index = indexIncluded(doc);
+    const device = doc?.data;
+    const caps = relatedAttributes(index, device, 'capabilities');
+    const status = relatedAttributes(index, device, 'status');
+    const config = relatedAttributes(index, device, 'configurations');
+
+    if (((caps?.audio?.customizable_slots) || 0) <= 0) {
+      throw new ChimeUnavailableError('not-a-chime', 'That device is not a Ring Chime');
+    }
+    if (status?.online !== true) {
+      throw new ChimeUnavailableError('offline', 'The chime is offline');
+    }
+    if (status?.audio?.snooze?.active) {
+      throw new ChimeUnavailableError('snoozed', 'The chime is snoozed in the Ring app');
+    }
+    const slot = (config?.audio?.customizable_slots ?? []).find((s) => s && !s.disabled && s.audio_ref);
+    if (!slot) {
+      throw new ChimeUnavailableError('no-slot', 'The chime has no enabled audio slot');
+    }
+
+    const res = await this.request(
+      'POST',
+      `/v1/devices/${encodeURIComponent(deviceId)}/media/audio/playback`,
+      { body: { data: { type: 'audio', attributes: { audio_ref: slot.audio_ref } } } },
+    );
+    return {
+      audioRef: slot.audio_ref,
+      audioName: slot.audio_name ?? null,
+      status: res?.data?.attributes?.status ?? 'unknown',
+    };
   }
 
   /** Perform one authenticated request and return the parsed JSON body. */

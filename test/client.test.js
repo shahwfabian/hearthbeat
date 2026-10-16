@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RingClient, RingError, RingAuthError } from '../server/ring/client.js';
+import { RingClient, RingError, RingAuthError, ChimeUnavailableError } from '../server/ring/client.js';
 
 /** Build a fetch stub that replays the given responses in order and records calls. */
 function stubFetch(responses) {
@@ -159,4 +159,66 @@ test('getEventHistory stops paging once a page is older than sinceMs', async () 
 test('getEventHistory returns [] for an account with no activity yet', async () => {
   const { c } = client([{ body: { data: [], links: { next: '/v1/x?page[key]=y' } } }]);
   assert.deepEqual(await c.getEventHistory('dev1'), []);
+});
+
+function chimeDoc({ slots = 2, online = true, snooze = false, config = undefined } = {}) {
+  return {
+    data: {
+      type: 'devices',
+      id: 'chime1',
+      attributes: { name: 'Living Room Chime' },
+      relationships: {
+        capabilities: { data: { type: 'device-capabilities', id: 'cap' } },
+        status: { data: { type: 'device-status', id: 'st' } },
+        configurations: { data: { type: 'device-configurations', id: 'cfg' } },
+      },
+    },
+    included: [
+      { type: 'device-capabilities', id: 'cap', attributes: slots ? { audio: { customizable_slots: slots } } : {} },
+      { type: 'device-status', id: 'st', attributes: { online, audio: { snooze: { active: snooze, until: null } } } },
+      {
+        type: 'device-configurations',
+        id: 'cfg',
+        attributes: {
+          audio: {
+            customizable_slots: config ?? [
+              { event: 'e2', disabled: true, audio_ref: 'ref-disabled', audio_name: 'Off' },
+              { event: 'e1', disabled: false, audio_ref: 'ref-ok', audio_name: 'Soft Bell' },
+            ],
+          },
+        },
+      },
+    ],
+  };
+}
+
+test('playChime picks the first enabled slot and posts its audio_ref', async () => {
+  const { c, calls } = client([
+    { body: chimeDoc() },
+    { body: { data: { type: 'audio', id: 'ref-ok', attributes: { status: 'completed' } } } },
+  ]);
+  const out = await c.playChime('chime1');
+  assert.deepEqual(out, { audioRef: 'ref-ok', audioName: 'Soft Bell', status: 'completed' });
+  assert.equal(calls[1].init.method, 'POST');
+  assert.match(calls[1].url, /\/chime1\/media\/audio\/playback$/);
+  assert.deepEqual(JSON.parse(calls[1].init.body), {
+    data: { type: 'audio', attributes: { audio_ref: 'ref-ok' } },
+  });
+});
+
+test('playChime refuses devices that are not chimes, offline, snoozed, or slotless', async () => {
+  const cases = [
+    [chimeDoc({ slots: 0 }), 'not-a-chime'],
+    [chimeDoc({ online: false }), 'offline'],
+    [chimeDoc({ snooze: true }), 'snoozed'],
+    [chimeDoc({ config: [{ event: 'x', disabled: true, audio_ref: 'r' }] }), 'no-slot'],
+  ];
+  for (const [doc, reason] of cases) {
+    const { c, calls } = client([{ body: doc }]);
+    await assert.rejects(
+      c.playChime('chime1'),
+      (err) => err instanceof ChimeUnavailableError && err.reason === reason,
+    );
+    assert.equal(calls.length, 1, `no playback request when ${reason}`);
+  }
 });
