@@ -210,3 +210,14 @@ test('poll picks up only new events and skips ones already seen', async () => {
   batch = [...batch, { id: 'n2', deviceId: IDS.kitchen, kind: 'motion', ts: atMinute(NOON, 520, TZ), source: 'history' }];
   assert.equal(await hub.poll(), 1);
 });
+
+test('reset returns the hub to a clean slate without logging', () => {
+  const { hub } = makeHub();
+  hub.ingest(evt('r1', IDS.kitchen, 'motion', 7 * 60));
+  hub.setSharing(false);
+  hub.reset();
+  assert.equal(hub.inside.length, 0);
+  assert.equal(hub.sharing, true);
+  assert.equal(hub.accessLog.length, 0);
+  assert.equal(hub.devices.size, 0);
+});

@@ -232,6 +232,24 @@ export class Hub {
     this.emit('update', { reason: 'forget' });
   }
 
+  /** Start from a clean slate (used by the demo's "reset day"). Not an access-log event. */
+  reset() {
+    this.inside = [];
+    this.doorway = [];
+    this.seen = new Set();
+    this.devices.clear();
+    this.sharing = true;
+    this.pausedAt = null;
+    this.dropped = 0;
+    this.accessLog = [];
+    this.accessSeq = 0;
+    this.lastNudgeAt = 0;
+    this.lastViewLogged.clear();
+    this.lastPoll = undefined;
+    this.baselineCache = null;
+    this.emit('update', { reason: 'reset' });
+  }
+
   /**
    * Family sends a gentle chime to the person's Ring Chime. One tap, no video.
    * Refused while sharing is paused (their wish comes first), when there is no
