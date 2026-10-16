@@ -33,7 +33,8 @@ export function showVisitor({ text, time, doorbell }) {
     void banner.offsetWidth; // restart the animation
     banner.classList.add('flash');
   }
-  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  // Vibration needs a prior tap on the page; skip silently otherwise.
+  if (navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate([200, 100, 200]);
   clearTimeout(hideTimer);
   hideTimer = setTimeout(hideVisitor, 20_000);
 }
