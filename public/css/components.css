@@ -165,3 +165,17 @@ details.why[open] summary { margin-bottom: 0.5rem; }
 .log li:last-child { border-bottom: 0; }
 .log .when { color: var(--muted); font-variant-numeric: tabular-nums; }
 .log .detail { color: var(--muted); display: block; font-size: 0.85rem; }
+
+/* ---------- view grid areas ---------- */
+.view-grid { display: contents; }
+.area-ring { grid-column: 1; grid-row: 1 / span 3; }
+.area-status { grid-column: 2; grid-row: 1; }
+.area-nudge { grid-column: 2; grid-row: 2; }
+.area-timeline { grid-column: 2; grid-row: 3; }
+@media (max-width: 960px) {
+  .area-ring, .area-status, .area-nudge, .area-timeline { grid-column: 1; grid-row: auto; }
+  .area-status { order: 1; }
+  .area-ring { order: 2; }
+  .area-nudge { order: 3; }
+  .area-timeline { order: 4; }
+}
