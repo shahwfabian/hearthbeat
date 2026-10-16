@@ -8,6 +8,8 @@
 
 export const DEFAULT_BASE_URL = 'https://api.amazonvision.com';
 
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
 export class RingError extends Error {
   constructor(message, { status = 0, body = null } = {}) {
     super(message);
@@ -46,8 +48,29 @@ export class RingClient {
     this.fetch = fetchImpl;
   }
 
+  /**
+   * Request with retry. Rate limits (429) and transient server errors
+   * (500, 502, 503, 504) are retried with exponential backoff, honouring
+   * `Retry-After` when present. Ring allows 100 requests per second.
+   */
+  async request(method, path, opts = {}) {
+    let attempt = 0;
+    for (;;) {
+      try {
+        return await this.#once(method, path, opts);
+      } catch (err) {
+        const retryable =
+          err instanceof RingError && !(err instanceof RingAuthError) && RETRYABLE.has(err.status);
+        if (!retryable || attempt >= this.maxRetries) throw err;
+        const waitMs = err.retryAfterMs ?? Math.min(250 * 2 ** attempt, 4000);
+        attempt += 1;
+        await this.sleep(waitMs);
+      }
+    }
+  }
+
   /** Perform one authenticated request and return the parsed JSON body. */
-  async request(method, path, { query, body } = {}) {
+  async #once(method, path, { query, body } = {}) {
     const url = new URL(path.startsWith('http') ? path : this.baseUrl + path);
     for (const [k, v] of Object.entries(query ?? {})) {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
@@ -78,10 +101,15 @@ export class RingClient {
       });
     }
     if (!res.ok) {
-      throw new RingError(`Ring API ${method} ${url.pathname} failed with ${res.status}`, {
+      const err = new RingError(`Ring API ${method} ${url.pathname} failed with ${res.status}`, {
         status: res.status,
         body: json,
       });
+      const retryAfter = Number(res.headers.get('retry-after'));
+      if (Number.isFinite(retryAfter) && retryAfter > 0) {
+        err.retryAfterMs = Math.min(retryAfter * 1000, 10_000);
+      }
+      throw err;
     }
     return json;
   }
