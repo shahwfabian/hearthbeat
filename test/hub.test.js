@@ -173,3 +173,40 @@ test('nudge turns unexpected Ring failures into a calm message', async () => {
   const { hub } = makeHub({ ring: fakeRing({ playChime: async () => { throw new Error('boom'); } }) });
   await assert.rejects(hub.nudge(), (e) => e.code === 'ring-error' && e.status === 502);
 });
+
+test('loadHistory reads every role-bearing device and learns the baseline', async () => {
+  const history = usualDays(8).map((e) => ({ ...e, id: `L-${e.id}`, deviceId: IDS.kitchen }));
+  const asked = [];
+  const ring = fakeRing({
+    async getEventHistory(id, opts) {
+      asked.push([id, opts.eventTypes]);
+      return id === IDS.kitchen ? history : [];
+    },
+  });
+  const { hub } = makeHub({ ring });
+  const out = await hub.loadHistory();
+  assert.equal(out.events, history.length);
+  assert.deepEqual(asked, [[IDS.kitchen, 'motion'], [IDS.door, 'ding,motion']]);
+  assert.equal(hub.baseline().ready, true);
+});
+
+test('loadHistory ignores devices without a role', async () => {
+  const ring = fakeRing({
+    async listDevices() {
+      return [{ id: 'stranger', name: 'Neighbour cam', online: true }, { id: IDS.kitchen, name: 'Kitchen camera', online: true }];
+    },
+  });
+  const { hub } = makeHub({ ring });
+  await hub.loadHistory();
+  assert.deepEqual([...hub.devices.keys()], [IDS.kitchen]);
+});
+
+test('poll picks up only new events and skips ones already seen', async () => {
+  let batch = [{ id: 'n1', deviceId: IDS.kitchen, kind: 'motion', ts: atMinute(NOON, 500, TZ), source: 'history' }];
+  const ring = fakeRing({ getEventHistory: async (id) => (id === IDS.kitchen ? batch : []) });
+  const { hub } = makeHub({ ring });
+  assert.equal(await hub.poll(), 1);
+  assert.equal(await hub.poll(), 0, 'same event again is a duplicate');
+  batch = [...batch, { id: 'n2', deviceId: IDS.kitchen, kind: 'motion', ts: atMinute(NOON, 520, TZ), source: 'history' }];
+  assert.equal(await hub.poll(), 1);
+});
