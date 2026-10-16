@@ -11,26 +11,31 @@ export const SCENARIOS = Object.freeze([
     id: 'usual',
     label: 'A usual day',
     blurb: 'Margaret follows her normal routine. Nothing to see, which is the point.',
+    moment: 12 * 60 + 30,
   },
   {
     id: 'slow-morning',
     label: 'A slow morning',
     blurb: 'No movement until almost 11 am. Watch the message soften, then escalate.',
+    moment: 10 * 60 + 30,
   },
   {
     id: 'dana-visit',
     label: 'Dana visits',
     blurb: 'A quiet morning ends when the doorbell rings. Hearthbeat notices and eases off.',
+    moment: 9 * 60 + 50,
   },
   {
     id: 'quiet-afternoon',
     label: 'A quiet afternoon',
     blurb: 'A normal morning, then four hours of silence after lunch.',
+    moment: 16 * 60 + 30,
   },
   {
     id: 'restless-night',
     label: 'A restless night',
     blurb: 'Lots of movement between 1 and 4 am, then a late start.',
+    moment: 8 * 60 + 30,
   },
 ]);
 

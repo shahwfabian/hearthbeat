@@ -12,6 +12,12 @@ const JUMPS = [
   { minute: 21 * 60, label: '9 PM' },
 ];
 
+const minuteLabel = (m) => {
+  const h24 = Math.floor(m / 60);
+  const mm = String(m % 60).padStart(2, '0');
+  return `${h24 % 12 || 12}:${mm} ${h24 >= 12 ? 'PM' : 'AM'}`;
+};
+
 async function call(path, body) {
   try {
     await post(path, body);
@@ -54,9 +60,13 @@ export function createDock(host) {
     );
     refs.blurb = h('p', { class: 'scenario-blurb' });
 
+    refs.moment = h('button', { class: 'chip chip-action', type: 'button' });
+    refs.moment.addEventListener('click', () => call('/api/demo/jump', { minute: refs.momentMinute }));
+
     refs.jumps = h(
       'div',
       { class: 'chips', role: 'group', 'aria-label': 'Jump to a time' },
+      refs.moment,
       JUMPS.map((j) => h('button', { class: 'chip', type: 'button', 'data-minute': j.minute, onclick: () => call('/api/demo/jump', { minute: j.minute }) }, j.label)),
     );
 
@@ -137,7 +147,10 @@ export function createDock(host) {
       for (const b of refs.scenarios.children) b.setAttribute('aria-pressed', String(b.dataset.id === demo.scenario));
       const current = demo.scenarios.find((s) => s.id === demo.scenario);
       refs.blurb.textContent = current ? current.blurb : '';
-      for (const b of refs.jumps.children) b.disabled = Number(b.dataset.minute) <= demo.minute;
+      for (const b of refs.jumps.children) if (b.dataset.minute) b.disabled = Number(b.dataset.minute) <= demo.minute;
+      refs.momentMinute = current?.moment ?? 12 * 60;
+      refs.moment.textContent = `Key moment (${minuteLabel(refs.momentMinute)})`;
+      refs.moment.disabled = refs.momentMinute <= demo.minute;
 
       refs.insideOffline = insideIds.length > 0 && insideIds.every((id) => demo.offline.includes(id));
       const offBtn = refs.triggers.querySelector('[data-offline]');

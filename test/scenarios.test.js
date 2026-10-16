@@ -8,6 +8,7 @@ const inside = (plan) => plan.filter((e) => e.deviceId === KITCHEN || e.deviceId
 test('every scenario has an id, label, and blurb', () => {
   assert.equal(SCENARIOS.length, 5);
   for (const s of SCENARIOS) assert.ok(s.id && s.label && s.blurb);
+  for (const s of SCENARIOS) assert.ok(Number.isInteger(s.moment) && s.moment > 6 * 60 + 30 && s.moment < 24 * 60, `${s.id} moment`);
   assert.equal(scenarioById('nope').id, 'usual');
 });
 
