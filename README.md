@@ -38,7 +38,7 @@ Requires [Node.js](https://nodejs.org) 22 or newer. There are **no dependencies 
 credentials to configure.
 
 ```bash
-git clone <this repository>
+git clone https://github.com/shahwfabian/hearthbeat.git
 cd hearthbeat
 npm start
 ```
@@ -100,7 +100,7 @@ npm run check    # hygiene checks (syntax, CSP-safe markup, secrets, links) + al
 npm test         # tests only
 ```
 
-The suite has 182 tests, run with the built-in Node test runner. They cover signature verification, webhook
+The suite has more than 180 tests, run with the built-in Node test runner. They cover signature verification, webhook
 parsing and replay protection, the Ring client (retries, paging, chime guards), the rhythm engine, the
 mock API driven by the real client, the HTTP server end to end (signed webhooks, scenarios, consent,
 server-sent events), and every demo scenario across 60 calendar days.
