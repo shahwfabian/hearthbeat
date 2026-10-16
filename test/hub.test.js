@@ -231,3 +231,16 @@ test('reset returns the hub to a clean slate without logging', () => {
   assert.equal(hub.accessLog.length, 0);
   assert.equal(hub.devices.size, 0);
 });
+
+test('a device that is already offline at startup is tracked as offline from now', async () => {
+  const ring = fakeRing({
+    async listDevices() {
+      return [{ id: IDS.kitchen, name: 'Kitchen camera', online: false }];
+    },
+  });
+  const { hub, clock } = makeHub({ ring });
+  await hub.loadHistory();
+  const d = hub.devices.get(IDS.kitchen);
+  assert.equal(d.online, false);
+  assert.equal(d.offlineSince, clock.t);
+});

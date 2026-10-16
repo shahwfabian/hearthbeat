@@ -301,7 +301,9 @@ export class Hub {
     for (const d of found) {
       const role = this.roleOf(d.id);
       if (!role) continue;
-      this.devices.set(d.id, { id: d.id, name: d.name, role, online: d.online, offlineSince: null });
+      // A device that is already offline when we start counts as offline from now.
+      const offlineSince = d.online === false ? this.now() : null;
+      this.devices.set(d.id, { id: d.id, name: d.name, role, online: d.online, offlineSince });
     }
     const sinceMs = this.now() - BASELINE_DAYS * DAY_MS;
     let loaded = 0;
