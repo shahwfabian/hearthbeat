@@ -17,15 +17,14 @@ async function listen(server, cfg) {
   } catch (err) {
     if (err.code === 'EADDRINUSE') {
       console.error(
-        `
-Port ${cfg.port} is already in use. Pick another one, for example:
-` +
-          '  macOS/Linux:  PORT=3001 npm start
-' +
-          '  PowerShell:   $env:PORT=3001; npm start
-' +
-          '  cmd.exe:      set PORT=3001 && npm start
-',
+        [
+          '',
+          `Port ${cfg.port} is already in use. Pick another one, for example:`,
+          '  macOS/Linux:  PORT=3001 npm start',
+          '  PowerShell:   $env:PORT=3001; npm start',
+          '  cmd.exe:      set PORT=3001 && npm start',
+          '',
+        ].join('\n'),
       );
       process.exit(1);
     }
