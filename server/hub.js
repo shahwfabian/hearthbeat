@@ -121,8 +121,11 @@ export class Hub {
     if (list.length > MAX_EVENTS) list.splice(0, list.length - MAX_EVENTS);
     if (role === 'inside') this.baselineCache = null;
 
+    // Only things happening now deserve a flashing banner, never history being replayed.
     const visit =
-      role === 'doorway' && (ev.kind === KINDS.DOORBELL || (ev.kind === KINDS.MOTION && ev.subType === 'human'));
+      role === 'doorway' &&
+      ev.source !== 'history' &&
+      (ev.kind === KINDS.DOORBELL || (ev.kind === KINDS.MOTION && ev.subType === 'human'));
     if (visit) {
       this.emit('visitor', {
         id: ev.id,

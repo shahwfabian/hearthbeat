@@ -32,6 +32,15 @@ test('doorbell and human motion at the door announce a visitor; vehicles do not'
   assert.equal(heard[0].text, 'Someone rang the doorbell');
 });
 
+test('replayed history never triggers the visitor banner', () => {
+  const { hub } = makeHub();
+  const heard = [];
+  hub.subscribe((m) => m.type === 'visitor' && heard.push(m));
+  hub.ingest(evt('old', IDS.door, 'doorbell', 60, { source: 'history' }));
+  assert.equal(heard.length, 0);
+  assert.equal(hub.doorway.length, 1, 'but the event is still kept for the timeline and context');
+});
+
 test('offline and online events update device state', () => {
   const { hub } = makeHub();
   hub.ingest(evt('o1', IDS.kitchen, 'offline', 8 * 60));
