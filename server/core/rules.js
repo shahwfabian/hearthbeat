@@ -1,6 +1,9 @@
 import {
+  MIN_GAP_THRESHOLD,
   MIN_MORNING_TOLERANCE,
   WAKE_FLOOR,
+  WAKING_END,
+  WAKING_START,
 } from './constants.js';
 import { formatDuration, formatMinutes } from './time.js';
 
@@ -60,6 +63,41 @@ export function lateStartRule({ baseline, today, nowMinute }) {
       usualFirstMinute: Math.round(usual.median),
       toleranceMinutes: Math.round(tolerance),
       minutesLate: Math.round(late),
+    },
+  };
+}
+
+/**
+ * A silence while awake that is clearly longer than this person's own longest
+ * usual quiet spell. Measured only inside waking hours so the evening wind-down
+ * and the night never look like a gap.
+ * @param {RuleContext} ctx
+ * @returns {Finding|null}
+ */
+export function longQuietRule({ baseline, today, nowMinute }) {
+  if (!baseline.gap || nowMinute < WAKING_START) return null;
+  if (!firstActivityToday(today)) return null; // the late-start rule owns this case
+  const last = today[today.length - 1];
+
+  const threshold = Math.max(MIN_GAP_THRESHOLD, baseline.gap.p90 * 1.25);
+  const from = Math.max(last.minute, WAKING_START);
+  const to = Math.min(nowMinute, WAKING_END);
+  const gap = to - from;
+  if (gap < threshold) return null;
+
+  const severity = gap >= threshold * 1.6 ? 2 : 1;
+  return {
+    rule: 'long-quiet',
+    severity,
+    headline: severity === 2 ? 'Worth a call: quiet for a long stretch' : 'Quiet for a while',
+    why:
+      `Last movement was at ${formatMinutes(last.minute)}, ${formatDuration(gap)} ago. ` +
+      `Their longest usual quiet spell while awake is about ${formatDuration(baseline.gap.p90)}.`,
+    numbers: {
+      lastMinute: Math.round(last.minute),
+      quietMinutes: Math.round(gap),
+      usualLongestMinutes: Math.round(baseline.gap.p90),
+      thresholdMinutes: Math.round(threshold),
     },
   };
 }
