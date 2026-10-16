@@ -1,5 +1,8 @@
 import { h, icon } from './dom.js';
 
+/** The view is redrawn on every live update, so remember whether the reader opened the explanation. */
+let whyOpen = false;
+
 const PILL = {
   typical: { icon: 'check', label: 'All looks usual' },
   quiet: { icon: 'clock', label: 'Quieter than usual' },
@@ -37,7 +40,7 @@ export function renderStatusCard(status, { personName, who }) {
     card.append(
       h(
         'details',
-        { class: 'why' },
+        { class: 'why', open: whyOpen, ontoggle: (e) => { whyOpen = e.target.open; } },
         h('summary', {}, 'Why am I seeing this?'),
         h('ul', { class: 'why-list' }, items),
       ),
