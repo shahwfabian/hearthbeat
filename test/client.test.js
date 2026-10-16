@@ -75,3 +75,41 @@ test('404 is not retried', async () => {
   await assert.rejects(c.request('GET', '/v1/devices/missing'), (e) => e.status === 404);
   assert.equal(calls.length, 1);
 });
+
+test('listDevices flattens a compound document', async () => {
+  const { c, calls } = client([
+    {
+      body: {
+        data: [
+          {
+            type: 'devices',
+            id: 'dev1',
+            attributes: { name: 'Front Door Camera' },
+            relationships: {
+              status: { data: { type: 'device-status', id: 's1' } },
+              capabilities: { data: { type: 'device-capabilities', id: 'c1' } },
+            },
+          },
+          { type: 'devices', id: 'dev2', attributes: {}, relationships: {} },
+        ],
+        included: [
+          { type: 'device-status', id: 's1', attributes: { online: true } },
+          { type: 'device-capabilities', id: 'c1', attributes: { audio: { customizable_slots: 2 } } },
+        ],
+      },
+    },
+  ]);
+  const devices = await c.listDevices();
+  assert.match(calls[0].url, /include=status%2Ccapabilities/);
+  assert.equal(devices[0].name, 'Front Door Camera');
+  assert.equal(devices[0].online, true);
+  assert.equal(devices[0].capabilities.audio.customizable_slots, 2);
+  assert.equal(devices[1].name, 'Unnamed device');
+  assert.equal(devices[1].online, null);
+});
+
+test('getStatus returns the attributes object and encodes the id', async () => {
+  const { c, calls } = client([{ body: { data: { attributes: { online: false } } } }]);
+  assert.deepEqual(await c.getStatus('ava1.ring.device.A/B'), { online: false });
+  assert.match(calls[0].url, /ava1\.ring\.device\.A%2FB\/status$/);
+});

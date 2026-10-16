@@ -6,6 +6,8 @@
  * Hearthbeat never calls the media endpoints (live video, clips, snapshots).
  */
 
+import { indexIncluded, relatedAttributes } from './jsonapi.js';
+
 export const DEFAULT_BASE_URL = 'https://api.amazonvision.com';
 
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
@@ -67,6 +69,30 @@ export class RingClient {
         await this.sleep(waitMs);
       }
     }
+  }
+
+  /**
+   * GET /v1/devices?include=status,capabilities
+   * Returns a flat list: { id, name, online, capabilities } for each device.
+   * `online` is null when Ring did not include status.
+   */
+  async listDevices() {
+    const doc = await this.request('GET', '/v1/devices', {
+      query: { include: 'status,capabilities' },
+    });
+    const index = indexIncluded(doc);
+    return (doc?.data ?? []).map((d) => ({
+      id: d.id,
+      name: d.attributes?.name ?? 'Unnamed device',
+      online: relatedAttributes(index, d, 'status')?.online ?? null,
+      capabilities: relatedAttributes(index, d, 'capabilities'),
+    }));
+  }
+
+  /** GET /v1/devices/{id}/status, the `attributes` object (`online`, `audio.snooze`, ...). */
+  async getStatus(deviceId) {
+    const doc = await this.request('GET', `/v1/devices/${encodeURIComponent(deviceId)}/status`);
+    return doc?.data?.attributes ?? {};
   }
 
   /** Perform one authenticated request and return the parsed JSON body. */
