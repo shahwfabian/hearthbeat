@@ -7,6 +7,7 @@
  */
 
 import { indexIncluded, relatedAttributes } from './jsonapi.js';
+import { HISTORY_KIND } from '../core/events.js';
 
 export const DEFAULT_BASE_URL = 'https://api.amazonvision.com';
 
@@ -27,6 +28,30 @@ export class RingAuthError extends RingError {
     super(message, opts);
     this.name = 'RingAuthError';
   }
+}
+
+/**
+ * Convert one Event History record to a HomeEvent.
+ * Record: { id, attributes: { event_type: "motion" | "motion.human" | "ding" | "on_demand", start } }
+ * `on_demand` (a live-view session) says nothing about the household, so it is skipped.
+ */
+export function historyRowToEvent(row, fallbackDeviceId) {
+  const raw = row?.attributes?.event_type;
+  if (typeof raw !== 'string') return null;
+  const [type, sub] = raw.split('.');
+  const kind = HISTORY_KIND[type];
+  if (!kind) return null;
+  const ts = Number(row.attributes.start);
+  if (!Number.isFinite(ts)) return null;
+  const event = {
+    id: String(row.id),
+    ts,
+    deviceId: row.relationships?.source?.data?.id ?? fallbackDeviceId,
+    kind,
+    source: 'history',
+  };
+  if (sub) event.subType = sub;
+  return event;
 }
 
 export class RingClient {
@@ -93,6 +118,38 @@ export class RingClient {
   async getStatus(deviceId) {
     const doc = await this.request('GET', `/v1/devices/${encodeURIComponent(deviceId)}/status`);
     return doc?.data?.attributes ?? {};
+  }
+
+  /**
+   * GET /v1/history/devices/{id}/events, following `links.next` to the end.
+   * Results come newest first and only cover events after the user gave
+   * consent. Each record is reduced to a HomeEvent (no media is requested).
+   *
+   * @param {string} deviceId
+   * @param {{ eventTypes?: string, sinceMs?: number, maxPages?: number }} [opts]
+   *   `eventTypes` uses Ring's composite syntax, e.g. "ding,motion.human".
+   *   Paging stops once a page is entirely older than `sinceMs`.
+   */
+  async getEventHistory(deviceId, { eventTypes, sinceMs = 0, maxPages = 50 } = {}) {
+    const events = [];
+    let path = `/v1/history/devices/${encodeURIComponent(deviceId)}/events`;
+    let query = { event_types: eventTypes };
+    for (let page = 0; page < maxPages; page += 1) {
+      const doc = await this.request('GET', path, { query });
+      const rows = doc?.data ?? [];
+      let oldest = Infinity;
+      for (const row of rows) {
+        const ev = historyRowToEvent(row, deviceId);
+        if (!ev) continue;
+        oldest = Math.min(oldest, ev.ts);
+        if (ev.ts >= sinceMs) events.push(ev);
+      }
+      const next = doc?.links?.next;
+      if (!next || rows.length === 0 || oldest < sinceMs) break;
+      path = next; // already contains the filters and the page[key] cursor
+      query = undefined;
+    }
+    return events;
   }
 
   /** Perform one authenticated request and return the parsed JSON body. */
