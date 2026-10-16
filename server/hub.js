@@ -3,7 +3,7 @@ import { buildBaseline } from './core/baseline.js';
 import { describeDoorway, describeInside, iconFor } from './core/describe.js';
 import { KINDS } from './core/events.js';
 import { evaluateDay } from './core/status.js';
-import { dayKey, formatClock, startOfDay } from './core/time.js';
+import { dayKey, formatClock, minutesOfDay, startOfDay } from './core/time.js';
 
 const DAY_MS = 86_400_000;
 const MAX_EVENTS = 5000;
@@ -173,6 +173,7 @@ export class Hub {
         id: ev.id,
         ts: ev.ts,
         time: formatClock(ev.ts, this.tz),
+        minute: minutesOfDay(ev.ts, this.tz),
         role,
         icon: iconFor(ev, role),
         text: role === 'doorway' ? describeDoorway(ev) : describeInside(ev, name),

@@ -84,6 +84,7 @@ test('timeline is today only, newest first, in plain language', () => {
   assert.deepEqual(rows.map((r) => r.text), ['Someone rang the doorbell', 'Movement in Kitchen camera']);
   assert.equal(rows[0].icon, 'bell');
   assert.equal(rows[0].time, '10:00 AM');
+  assert.equal(rows[0].minute, 600);
 });
 
 test('pausing sharing drops new events and is logged by the person', () => {

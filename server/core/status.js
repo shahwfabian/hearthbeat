@@ -64,6 +64,7 @@ export function evaluateDay({ insideEvents, doorwayEvents, baseline, devices, no
       id: e.id,
       ts: e.ts,
       time: formatClock(e.ts, tz),
+      minute: minutesOfDay(e.ts, tz),
       text: describeDoorway(e),
       icon: iconFor(e, 'doorway'),
       kind: e.kind,

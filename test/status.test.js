@@ -106,6 +106,7 @@ test('visitors: newest first, in plain language, today only', () => {
   });
   assert.deepEqual(s.visitors.map((v) => v.text), ['A package was delivered', 'Someone rang the doorbell']);
   assert.equal(s.visitors[0].icon, 'box');
+  assert.equal(s.visitors[0].minute, 600);
 });
 
 test('events after "now" are ignored (the simulated clock may be behind the data)', () => {
