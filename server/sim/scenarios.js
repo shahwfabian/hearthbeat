@@ -113,7 +113,12 @@ export function planDay(scenarioId, dayKey) {
       );
       break;
     case 'quiet-afternoon':
-      events = events.filter((e) => !isInside(e) || e.minute < 13 * 60 + 10 || e.minute > 17 * 60 + 5);
+      // Silence inside, and no visitor either: a visit would (rightly) soften the message.
+      events = events.filter((e) => {
+        const quietHours = e.minute >= 13 * 60 + 10 && e.minute <= 17 * 60 + 5;
+        const visitor = e.kind === 'doorbell' || e.subType === 'human';
+        return !(quietHours && (isInside(e) || visitor));
+      });
       break;
     case 'restless-night':
       events = events.filter((e) => !isInside(e) || e.minute >= 8 * 60 + 5);
