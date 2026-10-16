@@ -49,3 +49,6 @@ main { max-width: 1180px; margin: 0 auto; padding: 0 1rem 2rem; outline: none; }
     scroll-behavior: auto !important;
   }
 }
+
+/* Icons default to the size of the text beside them. */
+.icon { width: 1.2em; height: 1.2em; display: inline-block; vertical-align: -0.2em; flex: none; }
