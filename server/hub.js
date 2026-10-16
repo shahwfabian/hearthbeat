@@ -116,4 +116,51 @@ export class Hub {
     this.emit('update', { reason: role === 'inside' ? 'activity' : 'door' });
     return true;
   }
+
+  /** The learned usual day, recomputed only when inside history changes or the day rolls over. */
+  baseline() {
+    const key = dayKey(this.now(), this.tz);
+    if (!this.baselineCache || this.baselineCache.key !== key) {
+      this.baselineCache = {
+        key,
+        value: buildBaseline(this.inside, { now: this.now(), tz: this.tz, days: BASELINE_DAYS }),
+      };
+    }
+    return this.baselineCache.value;
+  }
+
+  /** Today's status for the family view. */
+  status() {
+    return evaluateDay({
+      insideEvents: this.inside,
+      doorwayEvents: this.doorway,
+      baseline: this.baseline(),
+      devices: [...this.devices.values()],
+      now: this.now(),
+      tz: this.tz,
+      personName: this.personName,
+    });
+  }
+
+  /** Today's events, newest first, in plain language: the timeline both people can read. */
+  timeline(limit = 40) {
+    const now = this.now();
+    const dayStart = startOfDay(now, this.tz);
+    const rows = [];
+    for (const ev of [...this.inside, ...this.doorway]) {
+      if (ev.ts < dayStart || ev.ts > now) continue;
+      const role = this.roleOf(ev.deviceId);
+      const name = this.devices.get(ev.deviceId)?.name ?? 'the house';
+      rows.push({
+        id: ev.id,
+        ts: ev.ts,
+        time: formatClock(ev.ts, this.tz),
+        role,
+        icon: iconFor(ev, role),
+        text: role === 'doorway' ? describeDoorway(ev) : describeInside(ev, name),
+        device: name,
+      });
+    }
+    return rows.sort((a, b) => b.ts - a.ts).slice(0, limit);
+  }
 }

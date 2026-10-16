@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { atMinute } from '../server/core/time.js';
-import { NOON, TZ } from './helpers.js';
+import { NOON, TZ, usualDays } from './helpers.js';
 import { IDS, evt, makeHub } from './hub-helpers.js';
 
 test('ingest keeps new inside and doorway events and ignores repeats', () => {
@@ -50,4 +50,37 @@ test('subscribers receive update messages and can unsubscribe', () => {
   off();
   hub.ingest(evt('u2', IDS.kitchen, 'motion', 101));
   assert.equal(n, 1);
+});
+
+function seedHistory(hub, days = 10) {
+  for (const e of usualDays(days)) hub.ingest({ ...e, id: `h-${e.id}`, deviceId: IDS.kitchen });
+}
+
+test('status learns from ingested history and then judges the day', () => {
+  const { hub } = makeHub({ now: atMinute(NOON, 9 * 60, TZ) });
+  assert.equal(hub.status().level, 'learning');
+  seedHistory(hub);
+  assert.equal(hub.status().level, 'quiet', 'nothing yet today, 105 minutes after the usual time');
+  hub.ingest(evt('m1', IDS.kitchen, 'motion', 8 * 60 + 40));
+  assert.equal(hub.status().level, 'typical');
+});
+
+test('baseline is cached until inside events change', () => {
+  const { hub } = makeHub();
+  seedHistory(hub);
+  const a = hub.baseline();
+  assert.equal(hub.baseline(), a);
+  hub.ingest(evt('m2', IDS.kitchen, 'motion', 8 * 60));
+  assert.notEqual(hub.baseline(), a);
+});
+
+test('timeline is today only, newest first, in plain language', () => {
+  const { hub } = makeHub({ now: atMinute(NOON, 12 * 60, TZ) });
+  seedHistory(hub, 3);
+  hub.ingest(evt('t1', IDS.kitchen, 'motion', 8 * 60));
+  hub.ingest(evt('t2', IDS.door, 'doorbell', 10 * 60));
+  const rows = hub.timeline();
+  assert.deepEqual(rows.map((r) => r.text), ['Someone rang the doorbell', 'Movement in Kitchen camera']);
+  assert.equal(rows[0].icon, 'bell');
+  assert.equal(rows[0].time, '10:00 AM');
 });
