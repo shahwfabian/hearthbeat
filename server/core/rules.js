@@ -1,6 +1,8 @@
 import {
   MIN_GAP_THRESHOLD,
   MIN_MORNING_TOLERANCE,
+  NIGHT_END,
+  NIGHT_START,
   WAKE_FLOOR,
   WAKING_END,
   WAKING_START,
@@ -99,5 +101,29 @@ export function longQuietRule({ baseline, today, nowMinute }) {
       usualLongestMinutes: Math.round(baseline.gap.p90),
       thresholdMinutes: Math.round(threshold),
     },
+  };
+}
+
+/**
+ * Noticeably more night-time movement (01:00 to 04:00) than this person's norm.
+ * Reported only until midday, then it is yesterday's news. It is a gentle note,
+ * never an alarm: broken sleep has many ordinary causes.
+ * @param {RuleContext} ctx
+ * @returns {Finding|null}
+ */
+export function restlessNightRule({ baseline, today, nowMinute }) {
+  if (nowMinute < NIGHT_END || nowMinute >= 12 * 60) return null;
+  const count = today.filter((e) => e.minute >= NIGHT_START && e.minute < NIGHT_END).length;
+  const threshold = baseline.night.mean + Math.max(3, 2 * baseline.night.std);
+  if (count < 4 || count < threshold) return null;
+
+  return {
+    rule: 'restless-night',
+    severity: 1,
+    headline: 'A restless night',
+    why:
+      `${count} movements between ${formatMinutes(NIGHT_START)} and ${formatMinutes(NIGHT_END)}, ` +
+      `compared with about ${Math.round(baseline.night.mean)} on a usual night.`,
+    numbers: { nightMovements: count, usualNightMovements: Math.round(baseline.night.mean) },
   };
 }

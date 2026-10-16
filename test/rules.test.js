@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildBaseline } from '../server/core/baseline.js';
-import { lateStartRule, longQuietRule } from '../server/core/rules.js';
+import { lateStartRule, longQuietRule, restlessNightRule } from '../server/core/rules.js';
 import { NOON, TZ, usualDays } from './helpers.js';
 
 const baseline = buildBaseline(usualDays(10), { now: NOON, tz: TZ });
@@ -78,4 +78,23 @@ test('long-quiet: the gap is measured from 7 am when the last movement was earli
   const today = [ev(at(5, 30))];
   assert.equal(longQuietRule({ baseline, today, nowMinute: at(8, 0) }), null);
   assert.equal(longQuietRule({ baseline, today, nowMinute: at(9, 0) })?.severity, 1);
+});
+
+test('restless-night: a normal night produces no note', () => {
+  const today = [ev(at(2, 0)), ev(at(7, 20))];
+  assert.equal(restlessNightRule({ baseline, today, nowMinute: at(9, 0) }), null);
+});
+
+test('restless-night: many night movements produce a gentle note', () => {
+  const today = [ev(at(1, 10)), ev(at(1, 40)), ev(at(2, 10)), ev(at(2, 50)), ev(at(3, 20)), ev(at(7, 20))];
+  const f = restlessNightRule({ baseline, today, nowMinute: at(9, 0) });
+  assert.equal(f.severity, 1);
+  assert.equal(f.headline, 'A restless night');
+  assert.match(f.why, /5 movements between 1:00 AM and 4:00 AM/);
+});
+
+test('restless-night: is only reported once the night is over, and only until midday', () => {
+  const today = [ev(at(1, 10)), ev(at(1, 40)), ev(at(2, 10)), ev(at(2, 50)), ev(at(3, 20))];
+  assert.equal(restlessNightRule({ baseline, today, nowMinute: at(2, 55) }), null);
+  assert.equal(restlessNightRule({ baseline, today, nowMinute: at(13, 0) }), null);
 });
