@@ -34,3 +34,21 @@
   .dock-body { max-height: 38vh; overflow: auto; }
   .dock-gap { margin-left: 0; flex-basis: 100%; }
 }
+
+/* On wide screens the dock becomes a side panel so it never covers the product. */
+@media (min-width: 1280px) {
+  body.has-dock { padding-right: 21.5rem; padding-bottom: 1.5rem; }
+  .dock {
+    top: 1rem; right: 1rem; bottom: 1rem; left: auto; width: 20rem;
+    border: 1px solid var(--line-strong); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: auto; background: var(--surface);
+  }
+  .dock[data-collapsed="true"] { bottom: auto; }
+  .dock-inner { padding: 1rem; gap: 1rem; }
+  .dock-body { gap: 1rem; }
+  .dock-row { gap: 0.5rem 0.6rem; }
+  .dock-row > .dock-title { flex-basis: 100%; }
+  .dock-gap { margin-left: 0; }
+  .dock-clock { font-size: 2rem; }
+  .dock-sim { margin-left: auto; }
+}

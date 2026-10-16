@@ -124,6 +124,7 @@ export function createDock(host) {
     /** Create or refresh the dock from the server's `demo` description. */
     sync(demo, devices) {
       host.hidden = false;
+      document.body.classList.add('has-dock');
       const insideIds = devices.filter((d) => d.role === 'inside').map((d) => d.id);
       if (!built) build(demo, insideIds);
 

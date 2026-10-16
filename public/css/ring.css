@@ -1,6 +1,6 @@
 /* The Rhythm Ring: a 24 hour clock. Outer band = usual day, inner band = today. */
 .ring-card { display: grid; gap: 0.75rem; justify-items: center; }
-.ring-wrap { width: min(100%, 30rem); position: relative; }
+.ring-wrap { width: min(100%, 27rem); position: relative; }
 .ring-svg { width: 100%; height: auto; touch-action: none; cursor: crosshair; }
 .ring-svg:focus-visible { box-shadow: var(--focus); border-radius: 50%; }
 
