@@ -15,34 +15,42 @@ import { IdempotencyCache, WebhookError, parseWebhook } from './webhook.js';
  * @param {{ key: string|undefined, hub: { ingest(ev: object): boolean } }} opts
  * @returns {(rawBody: Buffer, signature: string|undefined) => { status: number, body: object }}
  */
-export function createWebhookReceiver({ key, hub }) {
+export function createWebhookReceiver({ key, hub, onDelivery = null }) {
   const seen = new IdempotencyCache();
+  const report = (out, note, eventType) => {
+    try {
+      onDelivery?.({ status: out.status, note, eventType });
+    } catch {
+      /* observers never affect the response */
+    }
+    return out;
+  };
   return function receive(rawBody, signature) {
     if (!key) {
-      return { status: 503, body: { error: 'Webhook receiving is not configured (no signing key)' } };
+      return report({ status: 503, body: { error: 'Webhook receiving is not configured (no signing key)' } }, 'no signing key configured');
     }
     if (!verifySignature(key, rawBody, signature)) {
-      return { status: 401, body: { error: 'Invalid signature' } };
+      return report({ status: 401, body: { error: 'Invalid signature' } }, 'signature rejected');
     }
     let doc;
     try {
       doc = JSON.parse(rawBody.toString('utf8'));
     } catch {
-      return { status: 400, body: { error: 'Body is not valid JSON' } };
+      return report({ status: 400, body: { error: 'Body is not valid JSON' } }, 'signature ok, body not JSON');
     }
     let parsed;
     try {
       parsed = parseWebhook(doc);
     } catch (err) {
       if (err instanceof WebhookError && err.code === 'unsupported-type') {
-        return { status: 200, body: { status: 'ignored', reason: err.message } };
+        return report({ status: 200, body: { status: 'ignored', reason: err.message } }, 'signature verified, event type not used');
       }
-      return { status: 400, body: { error: err.message } };
+      return report({ status: 400, body: { error: err.message } }, 'signature ok, payload malformed');
     }
     if (!seen.claim(parsed.requestId)) {
-      return { status: 200, body: { status: 'already_processed' } };
+      return report({ status: 200, body: { status: 'already_processed' } }, 'signature verified, duplicate request_id', parsed.rawType);
     }
     const kept = hub.ingest(parsed.event);
-    return { status: 200, body: { status: kept ? 'processed' : 'ignored' } };
+    return report({ status: 200, body: { status: kept ? 'processed' : 'ignored' } }, kept ? 'signature verified, event kept' : 'signature verified, event not kept', parsed.rawType);
   };
 }

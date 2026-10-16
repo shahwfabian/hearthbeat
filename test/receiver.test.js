@@ -66,3 +66,18 @@ test('a hub that declines the event (for example sharing paused) still answers 2
   const { send } = setup(false);
   assert.equal(send(buildWebhookDocument(ev, { requestId: 'p' })).body.status, 'ignored');
 });
+
+test('onDelivery reports each outcome with a plain note and never the body', () => {
+  const seen = [];
+  const receive = createWebhookReceiver({ key: KEY, hub: { ingest: () => true }, onDelivery: (d) => seen.push(d) });
+  const raw = Buffer.from(JSON.stringify(buildWebhookDocument(ev, { requestId: 'obs' })));
+  receive(raw, signBody(KEY, raw));
+  receive(raw, signBody(KEY, raw));
+  receive(raw, 'sha256=bad');
+  assert.deepEqual(seen.map((d) => [d.status, d.note]), [
+    [200, 'signature verified, event kept'],
+    [200, 'signature verified, duplicate request_id'],
+    [401, 'signature rejected'],
+  ]);
+  assert.equal(seen[0].eventType, 'button_press');
+});
