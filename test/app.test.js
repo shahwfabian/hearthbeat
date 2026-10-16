@@ -94,6 +94,27 @@ test('a slow morning escalates from learning to "worth a call"', async () => {
   assert.match(s.status.detail, /usually around/);
 });
 
+test('each scenario delivers the status its blurb promises at its key moment', async () => {
+  const expected = {
+    usual: 'typical',
+    'slow-morning': 'checkin',
+    'dana-visit': 'checkin',
+    'quiet-afternoon': 'checkin',
+    'restless-night': 'quiet',
+  };
+  for (const [id, level] of Object.entries(expected)) {
+    await post('/api/demo/scenario', { id });
+    const { demo } = await state();
+    const moment = demo.scenarios.find((s) => s.id === id).moment;
+    await post('/api/demo/jump', { minute: moment });
+    const s = await state();
+    assert.equal(s.status.level, level, `${id} at ${demo.clock}: ${s.status.headline}`);
+  }
+  await post('/api/demo/scenario', { id: 'restless-night' });
+  await post('/api/demo/jump', { minute: 8 * 60 + 30 });
+  assert.equal((await state()).status.headline, 'A restless night');
+});
+
 test('playing the day moves the simulated clock at the chosen speed', async () => {
   await post('/api/demo/scenario', { id: 'usual' });
   await post('/api/demo/rate', { rate: 60 }); // 60 simulated minutes per real second
