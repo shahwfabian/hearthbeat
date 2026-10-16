@@ -7,6 +7,20 @@ import { dayKey, formatClock, startOfDay } from './core/time.js';
 
 const DAY_MS = 86_400_000;
 const MAX_EVENTS = 5000;
+const MAX_LOG = 200;
+const VIEW_LOG_DEBOUNCE_MS = 5 * 60_000;
+const NUDGE_COOLDOWN_MS = 10 * 60_000;
+
+/** An expected, explainable refusal (for example "sharing is paused"). `status` is the HTTP code to use. */
+export class HubError extends Error {
+  constructor(code, message, status = 409, extra = {}) {
+    super(message);
+    this.name = 'HubError';
+    this.code = code;
+    this.status = status;
+    Object.assign(this, extra);
+  }
+}
 
 /**
  * Hearthbeat's brain. It owns the events it has been allowed to see, the
@@ -23,15 +37,17 @@ export class Hub {
    *   ring: { listDevices(): Promise<any[]>, getEventHistory(id: string, o?: object): Promise<any[]>, playChime(id: string): Promise<any> },
    *   now: () => number,
    *   tz: string,
+   *   wallNow?: () => number,
    *   mode: 'demo'|'live',
    *   personName: string,
    *   caregiverName: string,
    *   roles?: Record<string, 'inside'|'doorway'|'chime'>,
    * }} opts
    */
-  constructor({ ring, now, tz, mode, personName, caregiverName, roles = {} }) {
+  constructor({ ring, now, wallNow = Date.now, tz, mode, personName, caregiverName, roles = {} }) {
     this.ring = ring;
     this.now = now;
+    this.wallNow = wallNow;
     this.tz = tz;
     this.mode = mode;
     this.personName = personName;
@@ -52,6 +68,8 @@ export class Hub {
     this.dropped = 0;
     this.accessLog = [];
     this.lastNudgeAt = 0;
+    this.lastViewLogged = new Map();
+    this.accessSeq = 0;
     this.baselineCache = null;
   }
 
@@ -162,5 +180,132 @@ export class Hub {
       });
     }
     return rows.sort((a, b) => b.ts - a.ts).slice(0, limit);
+  }
+
+  /**
+   * Record who did what with the data. The person being cared for can read this
+   * log at any time; Ring's content policy asks apps to give customers easy
+   * access to monitoring activity, and this is that.
+   */
+  log(who, action, detail = '') {
+    this.accessSeq += 1;
+    const entry = {
+      id: this.accessSeq,
+      ts: this.now(),
+      time: formatClock(this.now(), this.tz),
+      who,
+      action,
+      detail,
+    };
+    this.accessLog.push(entry);
+    if (this.accessLog.length > MAX_LOG) this.accessLog.splice(0, this.accessLog.length - MAX_LOG);
+    this.emit('log', { entry });
+    return entry;
+  }
+
+  /** The family member opened the dashboard. Logged at most once every five minutes of real time. */
+  recordFamilyView() {
+    const last = this.lastViewLogged.get(this.caregiverName) ?? 0;
+    const wall = this.wallNow();
+    if (wall - last < VIEW_LOG_DEBOUNCE_MS) return null;
+    this.lastViewLogged.set(this.caregiverName, wall);
+    return this.log(this.caregiverName, 'viewed', `Looked at ${this.personName}'s daily rhythm`);
+  }
+
+  /** The person being cared for pauses or resumes sharing. While paused, nothing new is kept. */
+  setSharing(on, by = this.personName) {
+    if (this.sharing === on) return this.sharing;
+    this.sharing = on;
+    this.pausedAt = on ? null : this.now();
+    this.log(by, on ? 'resumed sharing' : 'paused sharing', on ? '' : 'New activity is not being kept until sharing resumes.');
+    this.emit('update', { reason: 'sharing' });
+    return this.sharing;
+  }
+
+  /** Delete everything Hearthbeat has stored. The person can do this whenever they like. */
+  forget(by = this.personName) {
+    this.inside = [];
+    this.doorway = [];
+    this.seen = new Set();
+    this.baselineCache = null;
+    this.log(by, 'deleted stored activity', 'All remembered events were erased.');
+    this.emit('update', { reason: 'forget' });
+  }
+
+  /**
+   * Family sends a gentle chime to the person's Ring Chime. One tap, no video.
+   * Refused while sharing is paused (their wish comes first), when there is no
+   * chime, when a nudge was sent very recently, or when the chime cannot sound.
+   */
+  async nudge(by = this.caregiverName) {
+    if (!this.sharing) {
+      throw new HubError('paused', `${this.personName} has paused sharing, so Hearthbeat will not send anything.`, 403);
+    }
+    const chimeId = Object.keys(this.roles).find((id) => this.roles[id] === 'chime');
+    if (!chimeId) throw new HubError('no-chime', 'No Ring Chime is set up for this home.', 404);
+
+    const wall = this.wallNow();
+    const wait = this.lastNudgeAt + NUDGE_COOLDOWN_MS - wall;
+    if (this.lastNudgeAt && wait > 0) {
+      const mins = Math.ceil(wait / 60_000);
+      throw new HubError('too-soon', `A chime was just sent. Please wait ${mins} more minute${mins === 1 ? '' : 's'}.`, 429, {
+        retryInSeconds: Math.ceil(wait / 1000),
+      });
+    }
+
+    let played;
+    try {
+      played = await this.ring.playChime(chimeId);
+    } catch (err) {
+      if (err?.name === 'ChimeUnavailableError') {
+        const why = { offline: 'The chime is offline.', snoozed: `The chime is snoozed in ${this.personName}'s Ring app.` }[err.reason];
+        throw new HubError(err.reason, why ?? err.message, 409);
+      }
+      throw new HubError('ring-error', 'Ring could not play the chime right now. Please try again shortly.', 502);
+    }
+    this.lastNudgeAt = wall;
+    const entry = this.log(by, 'sent a gentle chime', `Played "${played.audioName ?? 'a soft sound'}" on the hallway chime.`);
+    this.emit('nudge', { entry });
+    return { ok: true, sound: played.audioName ?? null, entry };
+  }
+
+  /**
+   * Read the last two weeks of Event History for every device that has a role
+   * and learn from it. Works the same against the real API or the demo mock.
+   */
+  async loadHistory() {
+    const found = await this.ring.listDevices();
+    this.devices.clear();
+    for (const d of found) {
+      const role = this.roleOf(d.id);
+      if (!role) continue;
+      this.devices.set(d.id, { id: d.id, name: d.name, role, online: d.online, offlineSince: null });
+    }
+    const sinceMs = this.now() - BASELINE_DAYS * DAY_MS;
+    let loaded = 0;
+    for (const d of this.devices.values()) {
+      if (d.role === 'chime') continue;
+      const eventTypes = d.role === 'doorway' ? 'ding,motion' : 'motion';
+      const events = await this.ring.getEventHistory(d.id, { eventTypes, sinceMs });
+      for (const ev of events) if (this.ingest(ev)) loaded += 1;
+    }
+    this.lastPoll = this.now();
+    this.emit('update', { reason: 'history' });
+    return { devices: this.devices.size, events: loaded };
+  }
+
+  /** Live mode: fetch anything new since the last check (the documented alternative to webhooks). */
+  async poll() {
+    const since = (this.lastPoll ?? this.now()) - 2 * 60_000;
+    const started = this.now();
+    let added = 0;
+    for (const d of this.devices.values()) {
+      if (d.role === 'chime') continue;
+      const eventTypes = d.role === 'doorway' ? 'ding,motion' : 'motion';
+      const events = await this.ring.getEventHistory(d.id, { eventTypes, sinceMs: since });
+      for (const ev of events) if (this.ingest(ev)) added += 1;
+    }
+    this.lastPoll = started;
+    return added;
   }
 }
