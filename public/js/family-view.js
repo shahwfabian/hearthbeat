@@ -4,6 +4,7 @@ import { renderTimeline } from './timeline.js';
 import { confirmAction } from './confirm.js';
 import { ApiError, post } from './api.js';
 import { toast } from './toast.js';
+import { renderApiPanel } from './api-panel.js';
 
 /**
  * The family member's view: one clear answer, the Rhythm Ring, a way to say
@@ -71,6 +72,8 @@ export function createFamilyView(ringComponent) {
       renderTimeline(state.timeline),
     );
     root.append(today);
+
+    if (state.api) root.append(renderApiPanel(state.api));
   }
 
   return { element: root, render };

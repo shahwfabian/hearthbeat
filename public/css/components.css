@@ -203,3 +203,27 @@ details.why[open] summary { margin-bottom: 0.5rem; }
 .check-row small { display: block; color: var(--muted); }
 .hint { color: var(--muted); font-size: 0.9rem; }
 .card-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.9rem; }
+
+/* ---------- under the hood ---------- */
+.area-api { grid-column: 1 / -1; }
+@media (max-width: 960px) { .area-api { grid-column: 1; order: 9; } }
+.api-target { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 650; }
+.api-target code { color: var(--muted); font-weight: 400; }
+.api-sim, .api-live { padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); }
+.api-sim { background: var(--info-soft); color: var(--info-ink); }
+.api-live { background: var(--ok-soft); color: var(--ok-ink); }
+.api-log { display: grid; gap: 0.1rem; max-height: 18rem; overflow: auto; font-size: 0.85rem; }
+.api-row { display: grid; grid-template-columns: 5.5rem 4.5rem minmax(0, 2.4fr) 2.5rem minmax(0, 2fr); gap: 0.6rem; align-items: baseline; padding: 0.35rem 0; border-bottom: 1px dashed var(--line); }
+.api-row:last-child { border-bottom: 0; }
+.api-time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.api-dir { font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.api-row[data-dir="in"] .api-dir { color: var(--amber-ink); }
+.api-call { overflow-wrap: anywhere; }
+.api-status { font-weight: 800; font-variant-numeric: tabular-nums; }
+.api-ok { color: var(--ok); }
+.api-bad { color: var(--call); }
+.api-note { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .api-row { grid-template-columns: 1fr auto; }
+  .api-time, .api-dir, .api-note { grid-column: 1 / -1; }
+}
