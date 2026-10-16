@@ -19,7 +19,9 @@ const dock = createDock(document.getElementById('dock'));
 const ring = createRing();
 const views = { family: createFamilyView(ring), person: createPersonView() };
 
-let viewer = store.get('hearthbeat.viewer') === 'person' ? 'person' : 'family';
+const params = new URLSearchParams(location.search);
+const wanted = params.get('view') ?? store.get('hearthbeat.viewer');
+let viewer = wanted === 'person' ? 'person' : 'family';
 let lastState = null;
 let inflight = false;
 let dirty = false;
@@ -107,7 +109,7 @@ for (const el of Object.values(tabs)) {
   });
 }
 
-if (store.get('hearthbeat.intro') !== 'seen') {
+if (store.get('hearthbeat.intro') !== 'seen' && params.get('intro') !== '0') {
   intro.hidden = false;
   document.getElementById('intro-close').addEventListener('click', () => {
     intro.hidden = true;

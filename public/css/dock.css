@@ -22,6 +22,7 @@
   padding: 0.35rem 0.8rem; min-height: 2.25rem; font-size: 0.9rem; font-weight: 600;
 }
 .chip:hover { background: var(--surface-2); }
+.chip:disabled { opacity: 0.4; cursor: not-allowed; }
 .chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .chip-action { background: var(--amber-soft); color: var(--amber-ink); border-color: transparent; }
 .chip-action:hover { background: color-mix(in srgb, var(--amber-soft) 80%, var(--amber)); }
