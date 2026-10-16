@@ -5,9 +5,11 @@ import { WEBHOOK_KIND } from '../core/events.js';
  * failure (no retry), so only genuinely malformed payloads get one.
  */
 export class WebhookError extends Error {
-  constructor(message) {
+  /** @param {string} message @param {'malformed'|'unsupported-type'} [code] */
+  constructor(message, code = 'malformed') {
     super(message);
     this.name = 'WebhookError';
+    this.code = code;
   }
 }
 
@@ -41,7 +43,7 @@ export function parseWebhook(doc) {
   if (!Number.isFinite(ts)) throw new WebhookError('attributes.timestamp is not a number');
 
   const kind = WEBHOOK_KIND[data.type];
-  if (!kind) throw new WebhookError(`Unsupported event type: ${data.type}`);
+  if (!kind) throw new WebhookError(`Unsupported event type: ${data.type}`, 'unsupported-type');
 
   const event = {
     id: typeof data.id === 'string' && data.id ? data.id : `${attrs.source}_${data.type}_${ts}`,

@@ -46,7 +46,7 @@ test('rejects malformed payloads with WebhookError', () => {
   assert.throws(() => parseWebhook({}), WebhookError);
   assert.throws(() => parseWebhook(doc('motion_detected', {}, { request_id: '' })), WebhookError);
   assert.throws(() => parseWebhook(doc('motion_detected', { timestamp: 'soon' })), WebhookError);
-  assert.throws(() => parseWebhook(doc('not_a_real_type')), /Unsupported event type/);
+  assert.throws(() => parseWebhook(doc('not_a_real_type')), (e) => e.code === 'unsupported-type');
 });
 
 test('IdempotencyCache accepts an id once and rejects repeats', () => {
