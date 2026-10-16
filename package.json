@@ -13,6 +13,7 @@
     "demo": "node server/index.js",
     "live": "node server/index.js --live",
     "test": "node --test \"test/*.test.js\"",
-    "check": "node scripts/check.js && node --test \"test/*.test.js\""
+    "check": "node scripts/check.js && node --test \"test/*.test.js\"",
+    "thumbnail": "node scripts/make-thumbnail.js && node scripts/render-thumbnail.js"
   }
 }
