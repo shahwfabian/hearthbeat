@@ -28,7 +28,8 @@ async function call(path, body) {
 export function createDock(host) {
   let built = false;
   const refs = {};
-  let collapsed = store.get('hearthbeat.dock') === 'collapsed';
+  const saved = store.get('hearthbeat.dock');
+  let collapsed = saved ? saved === 'collapsed' : window.innerHeight < 780;
 
   function build(demo, insideIds) {
     clear(host);
@@ -85,6 +86,7 @@ export function createDock(host) {
     });
 
     host.dataset.collapsed = String(collapsed);
+    new ResizeObserver(() => document.documentElement.style.setProperty('--dock-h', `${host.offsetHeight}px`)).observe(host);
     host.append(
       h(
         'div',
@@ -102,9 +104,16 @@ export function createDock(host) {
         h(
           'div',
           { class: 'dock-body' },
-          h('div', { class: 'dock-row' }, h('span', { class: 'dock-title' }, 'Day'), refs.scenarios, refs.blurb),
-          h('div', { class: 'dock-row' }, h('span', { class: 'dock-title' }, 'Skip to'), refs.jumps),
-          h('div', { class: 'dock-row' }, h('span', { class: 'dock-title' }, 'Make it happen'), refs.triggers),
+          h('div', { class: 'dock-row' }, h('span', { class: 'dock-title' }, 'Day'), refs.scenarios),
+          refs.blurb,
+          h(
+            'div',
+            { class: 'dock-row' },
+            h('span', { class: 'dock-title' }, 'Skip to'),
+            refs.jumps,
+            h('span', { class: 'dock-title dock-gap' }, 'Make it happen'),
+            refs.triggers,
+          ),
         ),
       ),
     );

@@ -10,7 +10,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   min-height: 100vh;
-  padding-bottom: 5.5rem; /* room for the demo dock */
+  padding-bottom: calc(var(--dock-h, 0px) + 1.5rem); /* room for the demo dock */
 }
 
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; margin: 0; font-weight: 600; }
