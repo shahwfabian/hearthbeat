@@ -12,7 +12,25 @@ const publicDir = fileURLToPath(new URL('../public/', import.meta.url)).replace(
 
 async function listen(server, cfg) {
   server.listen(cfg.port, cfg.host);
-  await once(server, 'listening');
+  try {
+    await once(server, 'listening');
+  } catch (err) {
+    if (err.code === 'EADDRINUSE') {
+      console.error(
+        `
+Port ${cfg.port} is already in use. Pick another one, for example:
+` +
+          '  macOS/Linux:  PORT=3001 npm start
+' +
+          '  PowerShell:   $env:PORT=3001; npm start
+' +
+          '  cmd.exe:      set PORT=3001 && npm start
+',
+      );
+      process.exit(1);
+    }
+    throw err;
+  }
   return server.address().port;
 }
 
