@@ -97,6 +97,7 @@ test('ring data: 48 buckets of baseline and of today, plus the current slot', ()
   assert.equal(s.ring.today.length, 48);
   assert.equal(s.ring.today[14], 2);
   assert.equal(s.ring.nowBucket, 18);
+  assert.equal(s.ring.usualPerDay.length, 48);
 });
 
 test('visitors: newest first, in plain language, today only', () => {

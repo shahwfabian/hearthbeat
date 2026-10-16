@@ -83,6 +83,7 @@ export function evaluateDay({ insideEvents, doorwayEvents, baseline, devices, no
       : null,
     ring: {
       baseline: baseline.intensity,
+      usualPerDay: baseline.profile.map((v) => Math.round(v * 100) / 100),
       today: counts,
       nowMinute,
       nowBucket: bucketOf(nowMinute),
