@@ -8,6 +8,7 @@ import { Hub } from './hub.js';
 import { RingAuthError, RingClient } from './ring/client.js';
 import { DEMO_HMAC_KEY } from './sim/household.js';
 
+const allowedHosts = (process.env.ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim()).filter(Boolean);
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url)).replace(/[\\/]$/, '');
 
 async function listen(server, cfg) {
@@ -35,7 +36,7 @@ async function listen(server, cfg) {
 
 /** Demo mode: nothing to configure. A simulated Ring account feeds the real app code. */
 async function startDemo(cfg) {
-  const server = createApp({ hmacKey: DEMO_HMAC_KEY, publicDir });
+  const server = createApp({ hmacKey: DEMO_HMAC_KEY, publicDir, allowedHosts });
   const port = await listen(server, cfg);
 
   const demo = new DemoRuntime({ tz: cfg.tz, webhookUrl: () => `http://127.0.0.1:${port}/webhooks/ring` });
@@ -80,7 +81,7 @@ async function startLive(cfg) {
   });
   hubRef = hub;
 
-  const server = createApp({ hmacKey: live.hmacKey, publicDir });
+  const server = createApp({ hmacKey: live.hmacKey, publicDir, allowedHosts });
   const port = await listen(server, cfg);
   server.attach(hub, null);
 

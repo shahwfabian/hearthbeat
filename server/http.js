@@ -66,9 +66,12 @@ function send(res, status, body, headers = {}) {
  * attached afterwards with `server.attach(hub, demo)`. Until then API calls
  * answer 503 "starting".
  *
- * @param {{ hmacKey: string|undefined, publicDir: string }} opts
+ * @param {{ hmacKey: string|undefined, publicDir: string, allowedHosts?: string[] }} opts
+ *   `allowedHosts` are the host names the page may be opened on (localhost and
+ *   127.0.0.1 are always allowed). Requests for any other Host header are refused.
  */
-export function createApp({ hmacKey, publicDir }) {
+export function createApp({ hmacKey, publicDir, allowedHosts = [] }) {
+  const hosts = new Set(['localhost', '127.0.0.1', '[::1]', ...allowedHosts.map((h) => h.toLowerCase())]);
   /** @type {{ hub: import('./hub.js').Hub|null, demo: import('./demo.js').DemoRuntime|null }} */
   const ctx = { hub: null, demo: null };
   const receive = createWebhookReceiver({
@@ -102,8 +105,34 @@ data: ${JSON.stringify(payload)}
 
   const viewerOf = (url) => (url.searchParams.get('as') === 'person' ? 'person' : 'family');
 
+  /**
+   * This app runs on a person's own computer and has buttons that change things
+   * (pause sharing, delete everything, send a chime). Without a guard, any web page
+   * they happen to have open could press those buttons by sending requests to
+   * localhost, or by rebinding its own domain to 127.0.0.1. So, except for the
+   * signed webhook endpoint:
+   *  - the Host header must be one we expect (defeats DNS rebinding),
+   *  - a browser Origin, when present, must be this same site (defeats cross-site posts),
+   *  - changes must be sent as JSON, which browsers will not send cross-site without a
+   *    preflight that we never approve.
+   */
+  function guard(req, pathname) {
+    if (pathname === '/webhooks/ring') return;
+    const hostHeader = String(req.headers.host ?? '').toLowerCase();
+    const hostname = hostHeader.startsWith('[') ? hostHeader.slice(0, hostHeader.indexOf(']') + 1) : hostHeader.split(':')[0];
+    if (!hosts.has(hostname)) throw new HubError('bad-host', 'Unexpected Host header', 403);
+    const origin = req.headers.origin;
+    if (origin && origin !== `http://${hostHeader}` && origin !== `https://${hostHeader}`) {
+      throw new HubError('bad-origin', 'Cross-site requests are not allowed', 403);
+    }
+    if (req.method === 'POST' && !String(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+      throw new HubError('bad-type', 'Send JSON with Content-Type: application/json', 415);
+    }
+  }
+
   async function route(req, res, url) {
     const { pathname } = url;
+    guard(req, pathname);
     const { hub, demo } = ctx;
     if (!hub && pathname.startsWith('/api/')) {
       return send(res, 503, { ok: false, error: 'Hearthbeat is still starting. Try again in a moment.' }, { 'Retry-After': '1' });
