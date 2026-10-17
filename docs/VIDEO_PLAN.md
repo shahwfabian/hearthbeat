@@ -38,6 +38,9 @@ live version of steps 3 and 4 in the shot list below.
 
 ## Step 3: if you stay on demo mode, shoot it like this
 
+You can record from the hosted demo, https://hearthbeat-delta.vercel.app, or from `npm start`. The hosted one
+runs everything inside the page, so the **Under the hood** panel names its host as "inside this browser tab".
+
 ### Say it plainly, twice
 
 * In the first 20 seconds: **"I don't own a Ring device, so this demo runs against a simulator I wrote

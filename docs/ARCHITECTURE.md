@@ -40,6 +40,18 @@ real HMAC signatures, so the signature check, the parser and the de-duplication 
 > The mock API is our own simulation, written from Ring's public documentation. It is not an official
 > Ring simulator. The interface labels demo mode as "Simulated demo" at all times.
 
+## The hosted demo (Vercel)
+
+A public demo should not share one household between every visitor, and a serverless host cannot hold a
+simulated clock. So `npm run build` (`scripts/build-web.js`) writes `dist/`: the interface, plus browser-safe
+copies of the very same application modules (`server/core`, `server/sim`, `server/ring`, `hub.js`, `api.js`,
+`snapshot.js`, `local.js`) under `dist/engine/`, and flips `js/mode.js` to `STATIC = true`. In that build the
+page creates a private in-memory household per visitor: the real Ring client talks to the mock API through an
+in-memory `fetch`, and simulated webhooks are signed with the real HMAC code and handed to the real receiver.
+Nothing is sent anywhere. The build fails if any bundled file imports Node, and tests run the in-page backend
+in Node to keep it identical to the server. `vercel.json` sets the same Content Security Policy as the server
+(a test checks they match).
+
 ## The Ring surface we touch
 
 | Ring capability | Where | Why |
