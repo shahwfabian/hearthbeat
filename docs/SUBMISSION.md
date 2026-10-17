@@ -47,11 +47,11 @@ next, the honest limitations and the AI disclosure. It uses one screenshot, host
 
 **"Try it out" links** (add each with "Add another link"):
 
-1. https://github.com/shahwfabian/hearthbeat
-2. https://github.com/shahwfabian/hearthbeat#try-it-in-60-seconds
+1. https://hearthbeat-delta.vercel.app   (live demo: runs in the visitor's browser)
+2. https://github.com/shahwfabian/hearthbeat
+3. https://github.com/shahwfabian/hearthbeat#try-it-in-60-seconds
 
-The app needs a Node server, so there is no hosted demo URL; the repository link and the video are the
-ways to try it. Add the video link in its own field on the Devpost form after you upload it.
+Add the video link in its own field on the Devpost form after you upload it.
 
 ## Name and tagline
 

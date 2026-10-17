@@ -27,6 +27,7 @@ It never opens video, audio or snapshots.
   the server refuses chimes while paused), and **delete everything**.
 * **Under the hood.** A live panel of every Ring API call and webhook the page depends on: paths, status codes,
   signature verification. Never tokens, never message bodies.
+* **Hosted demo.** The same application code also runs entirely inside the browser tab, so the public demo needs no server and every visitor gets a private household.
 * **Interactive demo.** A built-in director panel lets anyone play a simulated day, jump to the key moment of
   five scenarios, and make things happen: a doorbell press, a package, cameras going offline.
 
@@ -100,7 +101,9 @@ The concept, scope decisions and final review are the submitter's responsibility
 
 ## Try it
 
-Requires Node.js 22 or newer. No install step and no credentials:
+**Live demo: https://hearthbeat-delta.vercel.app**. It runs the whole app inside your browser tab (a private simulated household per visitor, nothing sent anywhere), so there is nothing to install.
+
+To run it locally you need Node.js 22 or newer. No install step and no credentials:
 
 ```
 git clone https://github.com/shahwfabian/hearthbeat.git
