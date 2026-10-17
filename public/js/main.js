@@ -117,6 +117,8 @@ if (store.get('hearthbeat.intro') !== 'seen' && params.get('intro') !== '0') {
   });
 }
 
+window.addEventListener('hearthbeat:changed', () => schedule(0));
+
 connectEvents(
   (msg) => {
     if (msg.type === 'visitor') showVisitor(msg);

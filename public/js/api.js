@@ -32,13 +32,16 @@ export async function getState(viewer) {
 }
 
 export async function post(path, body = {}) {
-  return parse(
+  const result = await parse(
     await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }),
   );
+  // Redraw right away instead of waiting for the live-update message to arrive.
+  window.dispatchEvent(new Event('hearthbeat:changed'));
+  return result;
 }
 
 /**
