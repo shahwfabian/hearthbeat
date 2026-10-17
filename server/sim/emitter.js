@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { signBody } from '../ring/signing.js';
 import { DEMO_ACCOUNT_ID, DEMO_HMAC_KEY } from './household.js';
 
@@ -15,7 +14,7 @@ const TYPE_FOR_KIND = {
  *
  * @param {{id:string, ts:number, deviceId:string, kind:string, subType?:string}} ev
  */
-export function buildWebhookDocument(ev, { requestId = randomUUID(), now = Date.now() } = {}) {
+export function buildWebhookDocument(ev, { requestId = globalThis.crypto.randomUUID(), now = Date.now() } = {}) {
   const type = TYPE_FOR_KIND[ev.kind];
   if (!type) throw new Error(`No webhook type for kind ${ev.kind}`);
   const attributes = {

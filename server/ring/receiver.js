@@ -13,7 +13,7 @@ import { IdempotencyCache, WebhookError, parseWebhook } from './webhook.js';
  * malformed body gets a 4xx. Event types we do not use are acknowledged with 200.
  *
  * @param {{ key: string|undefined, hub: { ingest(ev: object): boolean } }} opts
- * @returns {(rawBody: Buffer, signature: string|undefined) => { status: number, body: object }}
+ * @returns {(rawBody: Uint8Array|string, signature: string|undefined) => { status: number, body: object }}
  */
 export function createWebhookReceiver({ key, hub, onDelivery = null }) {
   const seen = new IdempotencyCache();
@@ -34,7 +34,7 @@ export function createWebhookReceiver({ key, hub, onDelivery = null }) {
     }
     let doc;
     try {
-      doc = JSON.parse(rawBody.toString('utf8'));
+      doc = JSON.parse(typeof rawBody === 'string' ? rawBody : new TextDecoder().decode(rawBody));
     } catch {
       return report({ status: 400, body: { error: 'Body is not valid JSON' } }, 'signature ok, body not JSON');
     }
