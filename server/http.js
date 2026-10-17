@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { HubError } from './hub.js';
 import { createWebhookReceiver } from './ring/receiver.js';
-import { buildSnapshot } from './snapshot.js';
+import { handleApi } from './api.js';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -144,12 +144,6 @@ data: ${JSON.stringify(payload)}
       return send(res, out.status, out.body);
     }
 
-    if (req.method === 'GET' && pathname === '/api/state') {
-      const viewer = viewerOf(url);
-      if (viewer === 'family') hub.recordFamilyView();
-      return send(res, 200, buildSnapshot(hub, demo, viewer));
-    }
-
     if (req.method === 'GET' && pathname === '/api/events') {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -166,64 +160,16 @@ data: ${JSON.stringify(payload)}
       return undefined;
     }
 
-    if (req.method === 'POST' && pathname === '/api/nudge') {
-      const out = await hub.nudge(hub.caregiverName);
-      return send(res, 200, { ok: true, sound: out.sound });
-    }
-
-    if (req.method === 'POST' && pathname === '/api/sharing') {
-      const body = await readJson(req);
-      if (typeof body.on !== 'boolean') throw new HubError('bad-request', '"on" must be true or false', 400);
-      hub.setSharing(body.on);
-      return send(res, 200, { ok: true, sharing: hub.sharing });
-    }
-
-    if (req.method === 'POST' && pathname === '/api/forget') {
-      hub.forget();
-      return send(res, 200, { ok: true });
-    }
-
-    if (pathname.startsWith('/api/demo/')) {
-      if (!demo) throw new HubError('not-demo', 'Demo controls are only available in demo mode', 404);
-      return demoRoute(req, res, pathname.slice('/api/demo/'.length));
-    }
+    const out = await handleApi(ctx, {
+      method: req.method,
+      pathname,
+      viewer: viewerOf(url),
+      getBody: () => readJson(req),
+    });
+    if (out) return send(res, out.status, out.body);
 
     if (req.method === 'GET') return serveStatic(res, pathname);
     return send(res, 404, { error: 'Not found' });
-  }
-
-  async function demoRoute(req, res, action) {
-    const demo = ctx.demo;
-    if (req.method !== 'POST') throw new HubError('method', 'Use POST', 405);
-    const body = await readJson(req);
-    try {
-      switch (action) {
-        case 'play':
-          demo.setRunning(body.running !== false);
-          break;
-        case 'rate':
-          demo.setRate(Number(body.rate));
-          break;
-        case 'jump':
-          await demo.jumpTo(Number(body.minute));
-          break;
-        case 'scenario':
-          await demo.resetDay(String(body.id));
-          break;
-        case 'trigger':
-          await demo.trigger(String(body.id));
-          break;
-        case 'offline':
-          await demo.setOffline(String(body.deviceId), body.offline !== false);
-          break;
-        default:
-          throw new HubError('not-found', 'Unknown demo action', 404);
-      }
-    } catch (err) {
-      if (err instanceof RangeError) throw new HubError('bad-request', err.message, 400);
-      throw err;
-    }
-    return send(res, 200, { ok: true, demo: demo.describe() });
   }
 
   async function serveStatic(res, pathname) {
