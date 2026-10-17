@@ -19,9 +19,9 @@ const MIME = {
  * Strict headers: the page loads only its own scripts and styles and talks
  * only to its own origin. Inline script is not allowed at all.
  */
-const SECURITY_HEADERS = {
+export const SECURITY_HEADERS = {
   'Content-Security-Policy':
-    "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'",
+    "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'Cache-Control': 'no-store',
@@ -72,7 +72,7 @@ function send(res, status, body, headers = {}) {
  */
 export function createApp({ hmacKey, publicDir, allowedHosts = [] }) {
   const hosts = new Set(['localhost', '127.0.0.1', '[::1]', ...allowedHosts.map((h) => h.toLowerCase())]);
-  /** @type {{ hub: import('./hub.js').Hub|null, demo: import('./demo.js').DemoRuntime|null }} */
+  /** @type {{ hub: import('./hub.js').Hub|null, demo: import('./sim/runtime.js').DemoRuntime|null }} */
   const ctx = { hub: null, demo: null };
   const receive = createWebhookReceiver({
     key: hmacKey,

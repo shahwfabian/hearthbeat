@@ -25,7 +25,7 @@ export const PRIVACY = Object.freeze({
 
 /**
  * @param {import('./hub.js').Hub} hub
- * @param {import('./demo.js').DemoRuntime|null} demo
+ * @param {import('./sim/runtime.js').DemoRuntime|null} demo
  * @param {'family'|'person'} viewer
  */
 export function buildSnapshot(hub, demo, viewer) {
