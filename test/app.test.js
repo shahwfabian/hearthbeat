@@ -1,6 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { request as httpRequest } from 'node:http';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -170,7 +171,7 @@ test('invalid demo input is a 400, not a crash', async () => {
   assert.equal((await post('/api/demo/rate', { rate: 7 })).status, 400);
   assert.equal((await post('/api/demo/trigger', { id: 'nope' })).status, 400);
   assert.equal((await post('/api/sharing', { on: 'yes' })).status, 400);
-  const bad = await fetch(`${base}/api/sharing`, { method: 'POST', body: '{oops' });
+  const bad = await fetch(`${base}/api/sharing`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{oops' });
   assert.equal(bad.status, 400);
 });
 
@@ -213,4 +214,53 @@ test('forget erases remembered activity and the family sees "learning" again', a
   const s = await state('person');
   assert.equal(s.status.level, 'learning');
   assert.ok(s.accessLog.some((e) => e.action === 'deleted stored activity'));
+});
+
+function rawRequest(path, { method = 'GET', headers = {}, body } = {}) {
+  return new Promise((resolve, reject) => {
+    const { port } = server.address();
+    const req = httpRequest({ host: '127.0.0.1', port, path, method, headers }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode));
+    });
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
+test('a web page on another site cannot press the buttons (cross-site POST is refused)', async () => {
+  const before = (await state('person')).accessLog.length;
+  const res = await fetch(`${base}/api/forget`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' },
+    body: '{}',
+  });
+  assert.equal(res.status, 403);
+  assert.equal((await res.json()).code, 'bad-origin');
+  assert.equal((await state('person')).accessLog.length, before, 'nothing happened, so nothing was logged');
+});
+
+test('simple cross-site form posts (text/plain) are refused without a preflight', async () => {
+  const res = await fetch(`${base}/api/sharing`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: '{"on":false}' });
+  assert.equal(res.status, 415);
+  assert.equal((await state('person')).sharing.on, true);
+});
+
+test('DNS rebinding is refused: an unexpected Host header gets 403', async () => {
+  assert.equal(await rawRequest('/api/state?as=family', { headers: { Host: 'rebind.evil.example' } }), 403);
+  assert.equal(await rawRequest('/', { headers: { Host: 'rebind.evil.example' } }), 403);
+  assert.equal(await rawRequest('/api/state?as=family', { headers: { Host: 'localhost:3000' } }), 200);
+});
+
+test('the signed webhook endpoint stays reachable from any host name (a tunnel, for example)', async () => {
+  assert.equal(await rawRequest('/webhooks/ring', { method: 'POST', headers: { Host: 'abc123.tunnel.example', 'Content-Type': 'application/json' }, body: '{}' }), 401);
+});
+
+test('same-origin requests from the page itself still work', async () => {
+  const res = await fetch(`${base}/api/sharing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: base },
+    body: '{"on":true}',
+  });
+  assert.equal(res.status, 200);
 });
