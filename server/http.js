@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { HubError } from './hub.js';
 import { createWebhookReceiver } from './ring/receiver.js';
-import { handleApi } from './api.js';
+import { eventPayload, handleApi } from './api.js';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -86,15 +86,7 @@ export function createApp({ hmacKey, publicDir, allowedHosts = [] }) {
     ctx.hub = hub;
     ctx.demo = demo;
     hub.subscribe((msg) => {
-      const payload = {
-        type: msg.type,
-        reason: msg.reason ?? null,
-        entry: msg.entry ?? null,
-        id: msg.id ?? null,
-        text: msg.text ?? null,
-        time: msg.time ?? null,
-        doorbell: msg.doorbell ?? false,
-      };
+      const payload = eventPayload(msg);
       const line = `event: ${msg.type}
 data: ${JSON.stringify(payload)}
 

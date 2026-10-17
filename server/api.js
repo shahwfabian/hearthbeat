@@ -1,6 +1,19 @@
 import { HubError } from './hub.js';
 import { buildSnapshot } from './snapshot.js';
 
+/** What a live-update message looks like on the wire (server-sent events) and in the in-page backend. */
+export function eventPayload(msg) {
+  return {
+    type: msg.type,
+    reason: msg.reason ?? null,
+    entry: msg.entry ?? null,
+    id: msg.id ?? null,
+    text: msg.text ?? null,
+    time: msg.time ?? null,
+    doorbell: msg.doorbell ?? false,
+  };
+}
+
 /**
  * The application API, independent of how requests arrive. The Node server
  * (`server/http.js`) calls it for real HTTP requests; the hosted browser demo
