@@ -2,6 +2,8 @@
 
 ![Hearthbeat: does today look like a usual day?](docs/thumbnail.png)
 
+**Live demo: https://hearthbeat-delta.vercel.app** (runs entirely in your browser, nothing to install)
+
 **A calm answer to one question families ask every day: does today look like a usual day?**
 Built on Ring event data for the *Build, Ship, Shape: Amazon Developer Hackathon* (Ring track).
 It uses only **when** a Ring camera or doorbell noticed movement. Never video, audio or snapshots.
@@ -38,7 +40,10 @@ parents want dignity.
 
 ## Try it in 60 seconds
 
-Requires [Node.js](https://nodejs.org) 22 or newer. There are **no dependencies to install** and no
+Fastest: open the hosted demo, https://hearthbeat-delta.vercel.app, and skip to step 1 below. It runs the same application code inside
+your browser tab, so every visitor gets a private household and nothing is sent anywhere.
+
+To run it yourself you need [Node.js](https://nodejs.org) 22 or newer. There are **no dependencies to install** and no
 credentials to configure.
 
 ```bash
@@ -57,7 +62,7 @@ Open http://127.0.0.1:3000 and:
 5. Switch to **Margaret's view** and see the access log. Press the sharing switch, then go back to
    **Dana's view**: the family can no longer see anything, and the chime is disabled.
 
-Useful links: `/?view=person` opens the person's page, `/?intro=0` hides the intro.
+Useful links (on the hosted demo too): `/?view=person` opens the person's page, `/?intro=0` hides the intro.
 
 > **Everything on screen in demo mode is simulated.** The people and devices are fictional and the
 > Ring API is our own local mock of the documented endpoints (labelled "Simulated demo" in the UI). It is
