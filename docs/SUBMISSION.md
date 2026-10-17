@@ -3,7 +3,9 @@
 Everything needed for the "Build, Ship, Shape: Amazon Developer Hackathon" form, in the order the
 official rules list it. Deadline: **Friday 23 October 2026, 12:00 pm Pacific**.
 
-Sections marked **CONFIRM** contain statements only the submitter can truthfully make.
+Nothing in this file is a placeholder: copy each section into the matching Devpost field as written.
+The only things not done in this repository are the ones that happen on Devpost and on YouTube or Vimeo:
+recording and uploading the video, and pressing Submit.
 
 ## Checklist
 
@@ -12,15 +14,44 @@ Sections marked **CONFIRM** contain statements only the submitter can truthfully
 | Primary track: **Ring** | Ready |
 | Working app using Ring APIs, shown through a simulator or an actual Ring device | Code ready. **Risk: our simulator is self-built, not an official Ring one. Read [VIDEO_PLAN.md](VIDEO_PLAN.md) and send the [clarification email](CLARIFICATION_EMAIL.md)** |
 | Text description | Below |
-| Public GitHub repo with an open source license detectable in the About section | MIT `LICENSE` is in the repo. After the repo is public, confirm GitHub shows "MIT license" in About |
+| Public GitHub repo with an open source license detectable in the About section | Done: https://github.com/shahwfabian/hearthbeat is public and GitHub detects "MIT License" |
 | Clear setup and run instructions in the repo | [README](../README.md) |
 | Runtime use of Ring technology in code (imported and actually called) | `server/ring/client.js` is called by the Hub in both modes; `server/ring/receiver.js` handles webhooks |
 | Demo video under 3 minutes, public on YouTube or Vimeo | Script ready; **you record and upload** |
 | No third-party trademarks or copyrighted music in the video | Thumbnail and UI contain no logos; use no music |
-| Product feedback for each tool, API or SDK used | Below. **CONFIRM** |
+| Product feedback for each tool, API or SDK used | Below |
 | Friction log (optional, up to 10% bonus) | Below |
 | Mini challenges | See below |
-| Eligibility (age of majority, not in an excluded country, no conflict of interest) | **CONFIRM** |
+| Eligibility (age of majority, not in an excluded country, no conflict of interest) | Attested by the submitter on the Devpost form |
+
+## Devpost form: General info (paste exactly)
+
+| Field | Limit | Value | Length |
+|---|---|---|---|
+| Project name | 60 characters | `Hearthbeat` | 10 |
+| Elevator pitch | 200 characters | `A calm, video-free answer to "does today look like a usual day?" for families, built on Ring events. The person being cared for sees everything the family sees and holds the off switch.` | 185 |
+| Thumbnail | JPG, PNG or GIF, 5 MB max, 3:2 recommended | [`docs/thumbnail.png`](thumbnail.png): 1500 x 1000 (exactly 3:2), 0.8 MB | |
+
+Use **Edit thumbnail** on that form and upload `docs/thumbnail.png`. The artwork contains no logos or
+third-party marks. A second image for the gallery: `docs/screenshots/under-the-hood.png`.
+
+## Devpost form: Project Story (paste exactly)
+
+**About the project** (Markdown): paste the entire contents of [`DEVPOST_STORY.md`](DEVPOST_STORY.md). It already
+has the Inspiration, what it does, how it was built, challenges, accomplishments, what we learned, what is
+next, the honest limitations and the AI disclosure. It uses one screenshot, hosted from the public repository.
+
+**Built with** (up to 25 tags; add each as its own tag): `nodejs`, `javascript`, `html5`, `css3`, `svg`,
+`ring-partner-api`, `webhooks`, `hmac-sha256`, `server-sent-events`, `json-api`, `github-actions`,
+`content-security-policy`.
+
+**"Try it out" links** (add each with "Add another link"):
+
+1. https://github.com/shahwfabian/hearthbeat
+2. https://github.com/shahwfabian/hearthbeat#try-it-in-60-seconds
+
+The app needs a Node server, so there is no hosted demo URL; the repository link and the video are the
+ways to try it. Add the video link in its own field on the Devpost form after you upload it.
 
 ## Name and tagline
 
@@ -35,83 +66,23 @@ family sees, who looked, and they hold the off switch.
 
 ## Full description
 
-### Inspiration
-Anyone caring for an ageing parent asks one question every day: does today look normal? Camera apps
-answer a different question, and for the person being watched they feel like surveillance. Ring's
-developer materials list elderly care among the intended uses, and the Ring Appstore content policy asks
-for easy access to monitoring activity. We wanted to see how far a caring product could go using only
-event metadata, with the other person's dignity as the starting point.
-
-### What it does
-* **Rhythm Ring:** a 24 hour clock. The outer band is the person's usual day, learned from two weeks of
-  Event History. The inner band is today. Point at it, or use the arrow keys, to read any half hour in words.
-* **One plain answer:** "Looks like a usual day", "Quieter than usual", or "Worth a call", and always a
-  "Why am I seeing this?" that names the rule and the numbers. It refuses to judge when it cannot see
-  (devices offline) or has not learned enough yet.
-* **Gentle chime:** instead of an alarm, one tap plays a soft sound on their Ring Chime through the chime
-  audio playback endpoint. No video, nothing recorded.
-* **Visual doorbell:** doorbell presses become a large, high-contrast banner with optional flashing, for
-  anyone who cannot hear the chime.
-* **Their side of the story:** the person has their own page showing exactly what the family sees, an
-  access log of every look and every chime, a pause switch that really stops collection, and delete-all.
-* **Under the hood:** a live list of every Ring API call and webhook the page relies on, so a viewer can
-  verify which endpoints are used. Demo mode labels the API as our simulation.
-* **Interactive demo:** a built-in director panel lets anyone play a simulated day, jump to key moments,
-  and make things happen (a doorbell press, a package, cameras going offline) to watch the story change.
-
-### How we built it
-Node.js 22 with no runtime dependencies. A `RingClient` for the documented Ring Partner API (devices with
-`include`, Event History with composite `event_types` and `links.next` paging, chime playback following the
-documented capabilities → status → configurations → playback sequence); a webhook receiver that verifies
-`X-Signature` HMAC-SHA256 over the raw body, parses v1.1 payloads and de-duplicates on `meta.request_id`;
-a small explainable rules engine; and a vanilla-JS interface with SVG, a strict CSP and keyboard support.
-In demo mode a local mock of the documented endpoints stands in for Ring and a simulator sends **signed
-webhooks over real HTTP**, so the production code path is the one being exercised.
-
-### Challenges
-* Learning a routine from a doorbell and cameras is inherently indirect. We use *indoor* device motion
-  for the rhythm and keep doorway events for visitors, and we are explicit that Hearthbeat notices changes
-  in routine, not wellbeing.
-* Avoiding false alarms: tolerances have floors, visitors ease messages, and offline devices produce
-  "can't see right now" instead of "all quiet".
-* Making consent structural rather than decorative: the pause switch drops events at the source, and the
-  server refuses chimes while paused.
-
-### Accomplishments
-Over 180 automated tests including an end-to-end suite that drives the real Ring client against the mock
-API, signed webhooks through the HTTP server, and every demo scenario across 60 different calendar days.
-
-### What we learned
-Ring's event surface is richer than "motion alert": Event History, sub-typed motion, button presses,
-device state and chime playback together are enough for a respectful caretaking product.
-
-### What's next
-Account linking with Ring's one-way HMAC nonce flow, a registered app on Ring's staging environment,
-multiple caregivers with per-person consent, and Ring certification.
-
-### Honest limitations
-* Demo mode uses **our own mock** of the documented API, not an official Ring simulator (we found none in
-  Ring's documentation). Live mode is written against the docs and tested against the mock; it has not been
-  run against a real Ring account by the authors. **CONFIRM or update before submitting.**
-* Webhook receiving works but needs a registered Ring app and a public HTTPS URL to use for real.
-* Not a medical alert device and not tested with real older adults.
+The single source of truth is [`DEVPOST_STORY.md`](DEVPOST_STORY.md) (see the Project Story section above). It is
+not repeated here, so the two can never disagree.
 
 ## Tracks and mini challenges
 
 * **Primary track:** Ring.
 * **AWS Builder:** not entered (no AWS services are used).
-* **Open Source:** the repository is MIT licensed and created in the hackathon window. The rules describe
-  this challenge as a *new, additional* open source project or a contribution to a public repository
-  alongside the primary submission, so decide whether this repo itself qualifies or whether you want to add
-  a separate contribution (for example, fixes to the stale links and webhook payloads noted in the friction
-  log below, as a pull request to the public sample repository). **CONFIRM.**
+* **Open Source:** not entered. The rules describe this challenge as a *new, additional* open source
+  project or a contribution to a public repository *alongside* the primary submission. Our single repository
+  is the primary submission itself (it is MIT licensed), so we are not claiming it twice.
 
 ## Product feedback (required)
 
 > Basis for this feedback: reading Ring's developer documentation, studying the public sample repository,
 > and building and testing against the documented API shapes. We did **not** have a registered Ring app or
 > a Ring device in the build environment, so we cannot comment on real-device latency, reliability or the
-> Playground itself. **CONFIRM** this still matches what you did before submitting, and edit freely.
+> Playground itself.
 
 **Which tools, APIs and SDKs did you use, and for what?**
 Ring Partner API documentation (devices, status, Event History, webhook v1.1 and signature scheme, chime
@@ -135,13 +106,16 @@ playback), the public `ring-api-helloworld` sample for payload shapes, and the R
 **Onboarding (zero to hello world):** documentation and sample were easy to find from developer.ring.com.
 We did not complete a live hello world; see the basis note above.
 
-**Would you build with these devices and services again?** Draft: **Yes**, because the event surface
-supports respectful non-security products. **CONFIRM** this is your honest answer.
+**Would you build with these devices and services again?** **Yes.** The event surface (Event History,
+sub-typed motion, button presses, device state, chime playback) is enough to build respectful,
+non-security products, and the documentation's practical webhook guidance made the integration design
+straightforward. We would want an official simulator before building more.
 
 ## Friction log
 
-Entries are from reading the documentation and the public sample repository on 16 October 2026. Please
-re-check each one before submitting, because documentation changes.
+Entries are from reading the documentation and the public sample repository (`AmazonAppDev/ring-api-helloworld`)
+on 16 October 2026. We did not exercise a live account, so each entry is about documentation and sample code,
+not device behaviour. Documentation changes over time.
 
 | # | Task | Steps | Expected | Actual | Severity | Workaround | Suggestion |
 |---|---|---|---|---|---|---|---|
@@ -158,13 +132,12 @@ re-check each one before submitting, because documentation changes.
 | Request | Why it matters | Priority |
 |---|---|---|
 | Official simulator that emits signed v1.1 webhooks and serves fake Event History | Lets every developer demo without hardware and lets judges verify | Important |
-| Event History records that include motion sub type in the record itself | Avoids one request per sub type when learning routines | Nice-to-have |
+| Motion sub type included in each Event History record (the documentation's example record shows only `motion`, and sub types are reached through the `event_types` filter) | Avoids one request per sub type when learning routines | Nice-to-have |
 | Optional consented backfill window on first link | Pattern-learning apps otherwise start blind for days | Nice-to-have |
 | Longer-lived Playground tokens or in-page refresh | 30 minutes is short for a demo session | Nice-to-have |
 
 ## AI assistance disclosure
 
 The official rules we reviewed do not require an AI disclosure, but we include one so it is never in doubt:
-this project was written with the help of an AI coding assistant. The commit history shows the incremental
-development. The concept, scope decisions and final review are the submitter's responsibility. **CONFIRM** you
-reviewed the code and are comfortable with this wording.
+this project was written with the help of an AI coding assistant, in small steps that the commit history
+shows. The concept, scope decisions and final review are the submitter's responsibility.
