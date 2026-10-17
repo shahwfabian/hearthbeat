@@ -44,8 +44,9 @@ Using it for real needs a registered Ring app, which provides the signing key, a
 
 1. Register an app in the Ring Developer Console and obtain the HMAC signing key.
 2. Put the key in `RING_HMAC_KEY`.
-3. Expose the server over HTTPS (any tunnel or host) and register `https://<host>/webhooks/ring` as the
-   webhook URL.
+3. Expose the server over HTTPS (any tunnel or host) and register that public HTTPS address, with
+   `/webhooks/ring` on the end, as the webhook URL. The webhook endpoint answers on any host name; every
+   other route only answers on localhost (see `ALLOWED_HOSTS` in `.env.example`).
 
 Without a key the endpoint answers `503` rather than accepting unsigned data.
 

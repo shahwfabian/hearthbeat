@@ -54,6 +54,11 @@ metadata** (motion, doorbell presses, online/offline). It never opens video, aud
   and registered app are needed to use it for real.
 * Not a medical alert device. Copy says so everywhere it matters.
 
+## Status
+
+All milestones below are complete. The only steps that remain are outside the repository: recording and
+uploading the demo video, and submitting the form on Devpost (see `docs/SUBMISSION.md`).
+
 ## Milestones
 
 1. Scaffold, plan, license.
